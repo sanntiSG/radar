@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;900&display=swap');
+
+/* ── Design Tokens (OKLCH) ────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg:             oklch(0.09 0.012 240);
+  --surface:        oklch(0.13 0.010 240);
+  --surface-raised: oklch(0.17 0.009 240);
+
+  /* Borders */
+  --border:         oklch(0.23 0.010 240);
+  --border-strong:  oklch(0.32 0.012 240);
+
+  /* Text */
+  --text-1:  oklch(0.93 0.008 240);
+  --text-2:  oklch(0.58 0.012 240);
+  --text-3:  oklch(0.40 0.009 240);
+
+  /* Accent — jade refinado */
+  --accent:        oklch(0.73 0.14  150);
+  --accent-subtle: oklch(0.18 0.04  150);
+  --accent-dim:    oklch(0.30 0.08  150);
+
+  /* Amber — señales de alta energía */
+  --amber:        oklch(0.80 0.12  75);
+  --amber-subtle: oklch(0.16 0.04  75);
+
+  /* Fading — señales en declive */
+  --fading:        oklch(0.60 0.10  30);
+  --fading-subtle: oklch(0.15 0.04  30);
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Easing */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ── Base Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-1);
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ── Typography Scale ─────────────────────────────────────────────────────── */
+.text-display {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.text-score {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.text-label {
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ── Layout Components ────────────────────────────────────────────────────── */
+.radar-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ── Signal Row ───────────────────────────────────────────────────────────── */
+.signal-row {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 150ms var(--ease-out-quart);
+}
+
+.signal-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-dim) 30%,
+    var(--accent) 50%,
+    var(--accent-dim) 70%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: none;
+}
+
+.signal-row:hover::after {
+  animation: scan-sweep 0.8s var(--ease-out-expo) forwards;
+}
+
+.signal-row:hover {
+  background: var(--surface);
+}
+
+.signal-row.active {
+  background: var(--surface);
+}
+
+@keyframes scan-sweep {
+  from { opacity: 0; transform: translateX(-100%); }
+  40%  { opacity: 1; }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+/* ── Score Color Variants ─────────────────────────────────────────────────── */
+.score-high  { color: var(--amber); }
+.score-mid   { color: var(--accent); }
+.score-low   { color: var(--text-2); }
+.score-fade  { color: var(--fading); }
+
+/* ── Chart Container ──────────────────────────────────────────────────────── */
+.chart-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+/* ── Reduced Motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+.clip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fade-up-item {
+  animation: fade-up 500ms var(--ease-out-expo) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
