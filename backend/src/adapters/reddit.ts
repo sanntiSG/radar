@@ -33,21 +33,26 @@ export class RedditAdapter extends BaseAdapter {
 
     const { default: Snoowrap } = await import('snoowrap');
 
-    const clientId = process.env.REDDIT_CLIENT_ID;
+    const clientId     = process.env.REDDIT_CLIENT_ID;
     const clientSecret = process.env.REDDIT_CLIENT_SECRET;
-    const userAgent = process.env.REDDIT_USER_AGENT ?? 'radar:v0.1.0';
+    const username     = process.env.REDDIT_USERNAME;
+    const password     = process.env.REDDIT_PASSWORD;
+    const userAgent    = process.env.REDDIT_USER_AGENT ?? 'radar:v0.1.0';
 
-    if (!clientId || !clientSecret) {
-      throw new Error('REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET are required');
+    if (!clientId || !clientSecret || !username || !password) {
+      throw new Error(
+        'Reddit credentials missing. Set REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, ' +
+        'REDDIT_USERNAME and REDDIT_PASSWORD in your .env file.'
+      );
     }
 
+    // Script-app OAuth: usa usuario + contraseña para mayor rate limit y estabilidad.
     this.client = new Snoowrap({
       userAgent,
       clientId,
       clientSecret,
-      // App-only OAuth (no username/password needed for public data)
-      username: '',
-      password: '',
+      username,
+      password,
     }) as SnoowrapInstance;
 
     this.initialized = true;
