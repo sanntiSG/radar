@@ -39,6 +39,24 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
+/* Acentos por usuario — toda la UI consume --jade y derivados,
+   así que redefinirlos cambia el acento completo de la interfaz. */
+html[data-accent='amber'] {
+  --jade: oklch(80% 0.12 80);
+  --jade-deep: oklch(60% 0.1 80);
+  --jade-dim: oklch(80% 0.12 80 / 0.12);
+}
+html[data-accent='azure'] {
+  --jade: oklch(75% 0.12 230);
+  --jade-deep: oklch(56% 0.11 230);
+  --jade-dim: oklch(75% 0.12 230 / 0.12);
+}
+html[data-accent='violet'] {
+  --jade: oklch(74% 0.13 300);
+  --jade-deep: oklch(56% 0.12 300);
+  --jade-dim: oklch(74% 0.13 300 / 0.12);
+}
+
 html {
   scroll-behavior: smooth;
 }

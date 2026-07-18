@@ -12,6 +12,7 @@ import { alertsRouter } from './routes/alerts';
 import { watchlistsRouter } from './routes/watchlists';
 import { sourcesRouter } from './routes/sources';
 import { authRouter } from './routes/auth';
+import { meRouter } from './routes/me';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 
 export function createApp() {
@@ -31,6 +32,7 @@ export function createApp() {
   app.use('/api/watchlists', watchlistsRouter);
   app.use('/api/sources', sourcesRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/me', meRouter);
 
   app.use(notFound);
   app.use(errorHandler);
