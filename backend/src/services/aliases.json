@@ -1,0 +1,42 @@
+{
+  "_comment": "Diccionario bilingüe de alias → nombre canónico. Las claves se comparan en forma normalizada (minúsculas, sin acentos, sin marcas ni modelos). Editable y versionado.",
+  "portable printer": "Mini impresora portátil",
+  "mini printer": "Mini impresora portátil",
+  "pocket printer": "Mini impresora portátil",
+  "thermal printer": "Mini impresora portátil",
+  "sticker printer": "Mini impresora portátil",
+  "thermal sticker maker": "Mini impresora portátil",
+  "impresora portatil": "Mini impresora portátil",
+  "impresora termica": "Mini impresora portátil",
+  "mini impresora": "Mini impresora portátil",
+
+  "magnetic organizer": "Organizador magnético",
+  "magnetic storage": "Organizador magnético",
+  "organizador iman": "Organizador magnético",
+
+  "smart water bottle": "Botella térmica inteligente",
+  "smart bottle": "Botella térmica inteligente",
+  "thermal bottle": "Botella térmica inteligente",
+  "botella inteligente": "Botella térmica inteligente",
+  "botella termica": "Botella térmica inteligente",
+
+  "led strip": "Luces LED inteligentes",
+  "led strip light": "Luces LED inteligentes",
+  "smart led light": "Luces LED inteligentes",
+  "smart light": "Luces LED inteligentes",
+  "luces led": "Luces LED inteligentes",
+  "tira led": "Luces LED inteligentes",
+
+  "neck massager": "Masajeador de cuello",
+  "masajeador cuello": "Masajeador de cuello",
+
+  "pet water fountain": "Fuente de agua para mascotas",
+  "cat water fountain": "Fuente de agua para mascotas",
+  "fuente agua mascota": "Fuente de agua para mascotas",
+
+  "air fryer": "Freidora de aire",
+  "freidora aire": "Freidora de aire",
+
+  "posture corrector": "Corrector de postura",
+  "corrector postura": "Corrector de postura"
+}
