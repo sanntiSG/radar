@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { connectDb } from './config/db';
 import { env } from './config/env';
+import { startScheduler } from './jobs/scheduler';
 
 async function main() {
   await connectDb();
@@ -8,6 +9,7 @@ async function main() {
   app.listen(env.port, () => {
     console.log(`[Radar] API escuchando en http://localhost:${env.port}`);
   });
+  if (env.enableCron) startScheduler();
 }
 
 main().catch((err) => {
