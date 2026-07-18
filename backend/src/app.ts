@@ -2,6 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
 import { healthRouter } from './routes/health';
+import { signalsRouter } from './routes/signals';
+import { trendsRouter } from './routes/trends';
+import { hashtagsRouter } from './routes/hashtags';
+import { productsRouter } from './routes/products';
+import { historyRouter } from './routes/history';
+import { insightsRouter } from './routes/insights';
+import { alertsRouter } from './routes/alerts';
+import { watchlistsRouter } from './routes/watchlists';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 
 export function createApp() {
@@ -11,6 +19,14 @@ export function createApp() {
   app.use(express.json());
 
   app.use('/health', healthRouter);
+  app.use('/api/signals', signalsRouter);
+  app.use('/api/trends', trendsRouter);
+  app.use('/api/hashtags', hashtagsRouter);
+  app.use('/api/products', productsRouter);
+  app.use('/api/history', historyRouter);
+  app.use('/api/insights', insightsRouter);
+  app.use('/api/alerts', alertsRouter);
+  app.use('/api/watchlists', watchlistsRouter);
 
   app.use(notFound);
   app.use(errorHandler);
