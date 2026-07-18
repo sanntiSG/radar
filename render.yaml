@@ -1,0 +1,20 @@
+# Render Blueprint — backend de Radar
+# En https://dashboard.render.com → New → Blueprint → conectar sanntiSG/radar
+services:
+  - type: web
+    name: radar-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI
+        sync: false # pegar el URI de Atlas en el dashboard de Render
+      - key: PORT
+        value: 4000
+      - key: CORS_ORIGIN
+        sync: false # URL del frontend en Netlify, ej. https://radar-senales.netlify.app
+      - key: ENABLE_CRON
+        value: "true"

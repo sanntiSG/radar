@@ -1,0 +1,12 @@
+# Netlify — frontend de Radar
+# En https://app.netlify.com → Add new site → Import from GitHub → sanntiSG/radar
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Definir en Site settings → Environment variables:
+#   NEXT_PUBLIC_API_URL = https://radar-api.onrender.com  (URL del backend en Render)
