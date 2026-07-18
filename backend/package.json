@@ -29,6 +29,7 @@
     "@types/node": "^20.14.10",
     "@types/node-cron": "^3.0.11",
     "@types/string-similarity": "^4.0.2",
+    "mongodb-memory-server": "^11.2.0",
     "typescript": "^5.5.3",
     "vitest": "^2.0.3"
   }
