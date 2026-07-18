@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Schibsted_Grotesk, Spline_Sans_Mono } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth';
 import './globals.css';
 
 const body = Schibsted_Grotesk({
@@ -36,7 +37,9 @@ export default function RootLayout({
         />
         <style>{`:root { --font-display: 'Cabinet Grotesk', var(--font-body), sans-serif; }`}</style>
       </head>
-      <body className="font-body">{children}</body>
+      <body className="font-body">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

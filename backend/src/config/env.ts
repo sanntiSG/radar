@@ -13,6 +13,8 @@ export const env = {
     username: process.env.REDDIT_USERNAME ?? '',
     password: process.env.REDDIT_PASSWORD ?? '',
   },
+  jwtSecret: process.env.JWT_SECRET ?? 'radar-dev-secret-cambiar-en-produccion',
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
 };
 
 export function assertDbConfigured(): void {
