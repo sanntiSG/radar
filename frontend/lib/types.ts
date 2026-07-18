@@ -96,3 +96,31 @@ export interface Stats {
   highConfidence: number;
   avgRadarScore: number;
 }
+
+export interface SourceInfo {
+  name: string;
+  label: string;
+  description: string;
+  provides: string;
+  url: string;
+  mode: string;
+  cadence: string;
+  cachedItems: number;
+  lastRun: {
+    at: string;
+    itemsFetched: number;
+    newItems: number;
+    status: 'ok' | 'error';
+    error: string;
+  } | null;
+}
+
+export interface SourcesResponse {
+  sources: SourceInfo[];
+  schedule: {
+    ingest: string;
+    recompute: string;
+    dailyPipeline: string;
+    cronEnabled: boolean;
+  };
+}

@@ -7,6 +7,11 @@ import { ingest, recomputeAll, runPipeline } from '../signals/signalEngine';
  *  - cada 6 horas: recálculo de señales
  *  - diario 03:15 UTC: ciclo completo (garantiza snapshot diario)
  */
+export const CADENCES = {
+  ingest: 'Cada 2 horas',
+  recompute: 'Cada 6 horas',
+  dailyPipeline: 'Diario · 03:15 UTC',
+} as const;
 export function startScheduler(): void {
   cron.schedule('0 */2 * * *', () => {
     ingest().catch((err) => console.error('[cron] ingesta falló:', err));

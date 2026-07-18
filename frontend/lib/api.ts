@@ -5,6 +5,7 @@ import type {
   Paged,
   Product,
   Signal,
+  SourcesResponse,
   Stats,
   Trend,
 } from './types';
@@ -27,4 +28,5 @@ export const api = {
   insights: () => get<{ items: Insight[] }>('/api/insights'),
   history: (entityType: string, slug: string) =>
     get<{ points: HistoryPoint[] }>(`/api/history/${entityType}/${slug}`),
+  sources: () => get<SourcesResponse>('/api/sources'),
 };

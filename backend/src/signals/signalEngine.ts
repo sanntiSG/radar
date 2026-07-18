@@ -14,6 +14,7 @@ import {
   radarScore,
 } from '../engine';
 import { Alert, Hashtag, Product, Signal, Snapshot, Trend } from '../models';
+import { JobRun } from '../models/JobRun';
 import { canonicalize, type KnownEntity } from '../services/canonicalize';
 import { aggregateHashtags, extractCandidates } from './extract';
 
@@ -51,13 +52,29 @@ async function upsertSnapshot(
 export async function ingest(): Promise<{ items: number; products: number; hashtags: number }> {
   let allNew: RawItem[] = [];
   for (const adapter of adapters) {
+    const startedAt = new Date();
     try {
       const items = await adapter.fetchItems();
       const fresh = await filterNew(items);
       console.log(`[ingest] ${adapter.name}: ${items.length} items, ${fresh.length} nuevos`);
       allNew = allNew.concat(fresh);
+      await JobRun.create({
+        adapter: adapter.name,
+        startedAt,
+        finishedAt: new Date(),
+        itemsFetched: items.length,
+        newItems: fresh.length,
+        status: 'ok',
+      });
     } catch (err) {
       console.warn(`[ingest] adaptador ${adapter.name} falló:`, (err as Error).message);
+      await JobRun.create({
+        adapter: adapter.name,
+        startedAt,
+        finishedAt: new Date(),
+        status: 'error',
+        error: (err as Error).message,
+      }).catch(() => undefined);
     }
   }
 

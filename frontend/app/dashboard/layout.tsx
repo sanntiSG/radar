@@ -8,6 +8,7 @@ const NAV = [
   { href: '/dashboard/trends', label: 'Tendencias' },
   { href: '/dashboard/hashtags', label: 'Hashtags' },
   { href: '/dashboard/products', label: 'Productos' },
+  { href: '/dashboard/sources', label: 'Fuentes' },
 ];
 
 export default function DashboardLayout({
