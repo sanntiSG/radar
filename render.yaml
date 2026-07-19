@@ -18,3 +18,7 @@ services:
         sync: false # URL del frontend en Netlify, ej. https://radar-senales.netlify.app
       - key: ENABLE_CRON
         value: "true"
+      - key: JWT_SECRET
+        generateValue: true # Render genera un secreto aleatorio seguro
+      - key: GOOGLE_CLIENT_ID
+        sync: false # Client ID de Google OAuth (el mismo del frontend)

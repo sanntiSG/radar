@@ -25,6 +25,8 @@ npm run backfill   # 14 días de interés real desde Google Trends
 2. Completa las variables marcadas como secretas:
    - `MONGODB_URI` → la cadena de Atlas.
    - `CORS_ORIGIN` → la URL de Netlify (puedes ponerla después del paso 3).
+   - `GOOGLE_CLIENT_ID` → tu Client ID de Google OAuth (el `JWT_SECRET` lo
+     genera Render automáticamente).
 3. Deploy. Verifica `https://<tu-servicio>.onrender.com/health`.
 
 > Nota del plan free: el servicio "duerme" tras 15 min sin tráfico y la primera
@@ -37,8 +39,12 @@ npm run backfill   # 14 días de interés real desde Google Trends
    Netlify detecta `netlify.toml` (base `frontend/`).
 2. En **Site configuration → Environment variables** agrega:
    - `NEXT_PUBLIC_API_URL` = URL del backend en Render (sin barra final).
-3. Deploy. Abre la URL y verifica que el dashboard muestre señales.
-4. Vuelve a Render y ajusta `CORS_ORIGIN` con la URL final de Netlify.
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` = el mismo Client ID de Google del backend.
+3. En Google Cloud Console → tu OAuth Client → **Authorized JavaScript origins**,
+   agrega `http://localhost:3000` y la URL de Netlify (necesario para que el
+   botón de Google funcione en cada dominio).
+4. Deploy. Abre la URL y verifica que el dashboard muestre señales.
+5. Vuelve a Render y ajusta `CORS_ORIGIN` con la URL final de Netlify.
 
 ## Checklist final
 
@@ -46,3 +52,4 @@ npm run backfill   # 14 días de interés real desde Google Trends
 - [ ] `https://<render>/api/signals` devuelve señales
 - [ ] El dashboard de Netlify lista señales y abre el detalle con chart
 - [ ] `CORS_ORIGIN` en Render apunta exactamente a la URL de Netlify
+- [ ] El login demo funciona; el botón de Google aparece si configuraste los Client ID

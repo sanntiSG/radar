@@ -109,3 +109,117 @@ describe('Radar end-to-end', () => {
     expect(rising.radarScore).toBeGreaterThan(cooling.radarScore);
   });
 });
+
+describe('Fase 2 end-to-end', () => {
+  let token = '';
+  const authed = (path: string, init: RequestInit = {}) =>
+    fetch(`${base}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(init.headers as Record<string, string>),
+      },
+    });
+
+  it('fuentes con cadencias y metadatos', async () => {
+    const data = await get('/api/sources');
+    expect(data.sources.length).toBe(3);
+    expect(data.schedule.ingest).toBe('Cada 2 horas');
+    const reddit = data.sources.find((s: { name: string }) => s.name === 'reddit');
+    expect(reddit.mode).toContain('sin credenciales');
+    expect(reddit.cadence).toBeTruthy();
+  });
+
+  it('login demo devuelve JWT y /me funciona', async () => {
+    const res = await fetch(`${base}/api/auth/demo`, { method: 'POST' });
+    expect(res.ok).toBe(true);
+    const data = (await res.json()) as any;
+    token = data.token;
+    expect(token.length).toBeGreaterThan(20);
+    expect(data.user.email).toBe('demo@radar.app');
+
+    const me = await authed('/api/auth/me');
+    expect(me.ok).toBe(true);
+    const meData = (await me.json()) as any;
+    expect(meData.preferences.accent).toBe('jade');
+    expect(meData.preferences.sections.length).toBe(4);
+  });
+
+  it('rutas protegidas rechazan sin token', async () => {
+    const res = await fetch(`${base}/api/me`);
+    expect(res.status).toBe(401);
+  });
+
+  it('preferencias se actualizan y persisten', async () => {
+    const put = await authed('/api/me', {
+      method: 'PUT',
+      body: JSON.stringify({
+        preferences: {
+          accent: 'azure',
+          defaultCategory: 'Gadgets',
+          defaultSort: 'detectedAt',
+          sections: [
+            { id: 'feed', visible: true, order: 0 },
+            { id: 'stats', visible: false, order: 1 },
+            { id: 'insights', visible: true, order: 2 },
+            { id: 'watchlist', visible: true, order: 3 },
+          ],
+        },
+      }),
+    });
+    expect(put.ok).toBe(true);
+
+    const me = await ((await authed('/api/auth/me')).json() as Promise<any>);
+    expect(me.preferences.accent).toBe('azure');
+    expect(me.preferences.defaultCategory).toBe('Gadgets');
+    const stats = me.preferences.sections.find((s: { id: string }) => s.id === 'stats');
+    expect(stats.visible).toBe(false);
+  });
+
+  it('acento inválido se ignora', async () => {
+    await authed('/api/me', {
+      method: 'PUT',
+      body: JSON.stringify({ preferences: { accent: 'hotpink' } }),
+    });
+    const me = await ((await authed('/api/auth/me')).json() as Promise<any>);
+    expect(me.preferences.accent).toBe('azure');
+  });
+
+  it('watchlist personal: fijar, listar y quitar pines', async () => {
+    const add = await authed('/api/watchlists/me/items', {
+      method: 'POST',
+      body: JSON.stringify({ entityType: 'product', slug: 'mini-impresora-portatil' }),
+    });
+    expect(add.ok).toBe(true);
+
+    const list = await ((await authed('/api/watchlists/me')).json() as Promise<any>);
+    expect(list.items.some((i: { slug: string }) => i.slug === 'mini-impresora-portatil')).toBe(true);
+    expect(list.signals[0].name).toBe('Mini impresora portátil');
+
+    const del = await authed('/api/watchlists/me/items/mini-impresora-portatil', {
+      method: 'DELETE',
+    });
+    expect(del.ok).toBe(true);
+    const after = await ((await authed('/api/watchlists/me')).json() as Promise<any>);
+    expect(after.items.length).toBe(0);
+  });
+
+  it('export CSV de señales y productos', async () => {
+    const res = await fetch(`${base}/api/export/signals.csv`);
+    expect(res.ok).toBe(true);
+    expect(res.headers.get('content-type')).toContain('text/csv');
+    const csv = await res.text();
+    expect(csv).toContain('Radar Score');
+    expect(csv.split('\r\n').length).toBeGreaterThan(10);
+
+    const products = await fetch(`${base}/api/export/products.csv`);
+    expect(products.ok).toBe(true);
+    expect((await products.text())).toContain('Mini impresora portátil');
+  });
+
+  it('contador de alertas no vistas', async () => {
+    const data = await get('/api/alerts/unseen');
+    expect(data.count).toBeGreaterThan(0);
+  });
+});
