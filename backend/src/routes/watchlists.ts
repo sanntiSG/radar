@@ -1,8 +1,62 @@
 import { Router } from 'express';
-import { Watchlist } from '../models';
+import { Signal, Watchlist } from '../models';
+import { authRequired } from '../middlewares/auth';
 import { asyncHandler } from './helpers';
 
 export const watchlistsRouter = Router();
+
+/** Watchlist personal "Mis pines" — creada al vuelo por usuario. */
+async function myWatchlist(userId: string) {
+  return Watchlist.findOneAndUpdate(
+    { userId, name: 'Mis pines' },
+    { $setOnInsert: { items: [] } },
+    { new: true, upsert: true }
+  );
+}
+
+// GET /api/watchlists/me — pines del usuario con sus señales resueltas
+watchlistsRouter.get(
+  '/me',
+  authRequired,
+  asyncHandler(async (req, res) => {
+    const list = await myWatchlist(req.auth!.userId);
+    const slugs = list.items.map((i) => i.slug);
+    const signals = await Signal.find({ slug: { $in: slugs } }).sort({ radarScore: -1 });
+    res.json({ id: String(list._id), items: list.items, signals });
+  })
+);
+
+// POST /api/watchlists/me/items — fijar una señal
+watchlistsRouter.post(
+  '/me/items',
+  authRequired,
+  asyncHandler(async (req, res) => {
+    const { entityType, slug } = req.body as { entityType?: string; slug?: string };
+    if (!entityType || !slug) {
+      return res.status(400).json({ error: 'Faltan entityType y slug' });
+    }
+    const list = await myWatchlist(req.auth!.userId);
+    if (!list.items.some((i) => i.slug === slug)) {
+      list.items.push({ entityType, slug, addedAt: new Date() } as never);
+      await list.save();
+    }
+    res.json({ items: list.items });
+  })
+);
+
+// DELETE /api/watchlists/me/items/:slug — quitar un pin
+watchlistsRouter.delete(
+  '/me/items/:slug',
+  authRequired,
+  asyncHandler(async (req, res) => {
+    const list = await Watchlist.findOneAndUpdate(
+      { userId: req.auth!.userId, name: 'Mis pines' },
+      { $pull: { items: { slug: req.params.slug } } },
+      { new: true }
+    );
+    res.json({ items: list?.items ?? [] });
+  })
+);
 
 watchlistsRouter.get(
   '/',
