@@ -17,6 +17,8 @@ interface ListPageProps<T> {
   renderRow: (item: T, index: number) => React.ReactNode;
   emptyHint: string;
   filterByCategory?: boolean;
+  /** Acciones extra en el encabezado (ej. botón de exportar). */
+  actions?: React.ReactNode;
 }
 
 export function ListPage<T>({
@@ -27,6 +29,7 @@ export function ListPage<T>({
   renderRow,
   emptyHint,
   filterByCategory = true,
+  actions,
 }: ListPageProps<T>) {
   const [items, setItems] = useState<T[] | null>(null);
   const [category, setCategory] = useState('Todas');
@@ -45,8 +48,13 @@ export function ListPage<T>({
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
       <header className="border-b border-line pb-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-dim">{subtitle}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
+            <p className="mt-1 text-sm text-dim">{subtitle}</p>
+          </div>
+          {actions}
+        </div>
 
         {filterByCategory && (
           <div className="mt-5 flex gap-2 overflow-x-auto pb-1">

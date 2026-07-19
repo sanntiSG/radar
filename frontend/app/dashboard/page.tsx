@@ -266,14 +266,23 @@ export default function DashboardPage() {
             Lo que el mercado murmura, ordenado a tu manera.
           </p>
         </div>
-        {!user && !authLoading && (
-          <Link
-            href="/login"
+        <div className="flex items-center gap-3">
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/export/signals.csv`}
+            download
             className="pressable rounded-full border border-line-strong px-4 py-2 text-sm text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
           >
-            Inicia sesión para personalizar
-          </Link>
-        )}
+            Exportar CSV
+          </a>
+          {!user && !authLoading && (
+            <Link
+              href="/login"
+              className="pressable rounded-full border border-line-strong px-4 py-2 text-sm text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
+            >
+              Inicia sesión para personalizar
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">

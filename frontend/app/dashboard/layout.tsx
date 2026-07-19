@@ -2,13 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 const NAV = [
   { href: '/dashboard', label: 'Señales' },
   { href: '/dashboard/trends', label: 'Tendencias' },
   { href: '/dashboard/hashtags', label: 'Hashtags' },
   { href: '/dashboard/products', label: 'Productos' },
+  { href: '/dashboard/alerts', label: 'Alertas' },
   { href: '/dashboard/sources', label: 'Fuentes' },
 ];
 
@@ -66,6 +70,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [unseen, setUnseen] = useState(0);
+
+  useEffect(() => {
+    fetch(`${API}/api/alerts/unseen`)
+      .then((r) => r.json())
+      .then((data) => setUnseen(data.count ?? 0))
+      .catch(() => undefined);
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen flex-col bg-bg text-ink md:flex-row">
@@ -80,17 +92,23 @@ export default function DashboardLayout({
         <nav className="flex gap-1 md:flex-col">
           {NAV.map((item) => {
             const active = pathname === item.href;
+            const isAlerts = item.href === '/dashboard/alerts';
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`pressable whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
+                className={`pressable flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
                   active
                     ? 'bg-soft font-medium text-ink'
                     : 'text-dim hover:bg-elev hover:text-ink'
                 }`}
               >
                 {item.label}
+                {isAlerts && unseen > 0 && (
+                  <span className="rounded-full bg-jade px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-[oklch(18%_0.02_165)]">
+                    {unseen > 9 ? '9+' : unseen}
+                  </span>
+                )}
               </Link>
             );
           })}

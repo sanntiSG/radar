@@ -14,6 +14,15 @@ export default function ProductsPage() {
       fetcher={(p) => api.products(p)}
       columns={['Producto', 'Score', 'Crecimiento', 'Frecuencia']}
       emptyHint="Ejecuta el seed para cargar productos de ejemplo o el recolector para detectar reales: cd backend && npm run seed"
+      actions={
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/export/products.csv`}
+          download
+          className="pressable rounded-full border border-line-strong px-4 py-2 text-sm text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
+        >
+          Exportar CSV
+        </a>
+      }
       renderRow={(p) => (
         <Row columns={4}>
           <div className="min-w-0">

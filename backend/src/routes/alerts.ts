@@ -16,6 +16,15 @@ alertsRouter.get(
   })
 );
 
+// GET /api/alerts/unseen — contador para el badge del nav
+alertsRouter.get(
+  '/unseen',
+  asyncHandler(async (_req, res) => {
+    const count = await Alert.countDocuments({ seen: false });
+    res.json({ count });
+  })
+);
+
 alertsRouter.patch(
   '/:id/seen',
   asyncHandler(async (req, res) => {
