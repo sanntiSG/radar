@@ -106,6 +106,24 @@ export interface Stats {
   avgRadarScore: number;
 }
 
+export interface Opportunity {
+  _id: string;
+  name: string;
+  slug: string;
+  category: string;
+  entityType: EntityType;
+  radarScore: number;
+  growthScore: number;
+  status: SignalStatus;
+  confidence: ConfidenceLevel;
+  metrics: SignalMetrics;
+  sparkline: number[];
+  opportunityScore: number;
+  reason: string;
+  detectedAt: string;
+  sources: string[];
+}
+
 export interface SourceInfo {
   name: string;
   label: string;

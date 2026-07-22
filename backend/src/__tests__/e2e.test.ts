@@ -275,4 +275,18 @@ describe('Fase 2 end-to-end', () => {
     const me = await ((await authed('/api/auth/me')).json() as Promise<any>);
     expect(me.preferences.country).toBe('AR'); // previous valid value
   });
+
+  it('GET /api/opportunities devuelve senales ordenadas por opportunityScore (N3)', async () => {
+    const data = await get('/api/opportunities');
+    expect(Array.isArray(data.items)).toBe(true);
+    expect(data.items.length).toBeGreaterThan(0);
+    const first = data.items[0];
+    expect(first.opportunityScore).toBeGreaterThan(0);
+    expect(typeof first.reason).toBe('string');
+    expect(first.reason.length).toBeGreaterThan(5);
+    // ordenadas de mayor a menor
+    for (let i = 1; i < data.items.length; i++) {
+      expect(data.items[i - 1].opportunityScore).toBeGreaterThanOrEqual(data.items[i].opportunityScore);
+    }
+  });
 });

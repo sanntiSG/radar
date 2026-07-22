@@ -2,6 +2,7 @@ import type {
   Hashtag,
   HistoryPoint,
   Insight,
+  Opportunity,
   Paged,
   Product,
   Signal,
@@ -29,4 +30,5 @@ export const api = {
   history: (entityType: string, slug: string) =>
     get<{ points: HistoryPoint[] }>(`/api/history/${entityType}/${slug}`),
   sources: () => get<SourcesResponse>('/api/sources'),
+  opportunities: () => get<{ items: Opportunity[]; total: number }>('/api/opportunities'),
 };

@@ -15,6 +15,7 @@ import { authRouter } from './routes/auth';
 import { meRouter } from './routes/me';
 import { exportRouter } from './routes/exportCsv';
 import { metaRouter } from './routes/meta';
+import { opportunitiesRouter } from './routes/opportunities';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 
 export function createApp() {
@@ -37,6 +38,7 @@ export function createApp() {
   app.use('/api/me', meRouter);
   app.use('/api/export', exportRouter);
   app.use('/api/meta', metaRouter);
+  app.use('/api/opportunities', opportunitiesRouter);
 
   app.use(notFound);
   app.use(errorHandler);
