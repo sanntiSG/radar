@@ -11,6 +11,14 @@ export interface SignalMetrics {
   recency: number;
 }
 
+export interface SignalFactor {
+  key: string;
+  label: string;
+  detail: string;
+  contribution: number; // 0-100
+  weight: number | null; // % en Radar Score; null para factores cualitativos
+}
+
 export interface Signal {
   _id: string;
   name: string;
@@ -24,6 +32,7 @@ export interface Signal {
   status: SignalStatus;
   detectedAt: string;
   explanation: string;
+  factors: SignalFactor[];
   sources: string[];
   aliases: string[];
   metrics: SignalMetrics;

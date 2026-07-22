@@ -108,6 +108,21 @@ describe('Radar end-to-end', () => {
     const cooling = await get('/api/signals/corrector-de-postura');
     expect(rising.radarScore).toBeGreaterThan(cooling.radarScore);
   });
+
+  it('señal incluye factores explicativos (N1)', async () => {
+    const signal = await get('/api/signals/mini-impresora-portatil');
+    expect(Array.isArray(signal.factors)).toBe(true);
+    expect(signal.factors.length).toBeGreaterThanOrEqual(5);
+    const velFactor = signal.factors.find((f: { key: string }) => f.key === 'velocity');
+    expect(velFactor).toBeDefined();
+    expect(velFactor.contribution).toBeGreaterThanOrEqual(0);
+    expect(velFactor.weight).toBe(30);
+    // Todos los factores del Radar Score tienen contribución 0-100
+    for (const f of signal.factors.filter((f: { weight: number | null }) => f.weight !== null)) {
+      expect(f.contribution).toBeGreaterThanOrEqual(0);
+      expect(f.contribution).toBeLessThanOrEqual(100);
+    }
+  });
 });
 
 describe('Fase 2 end-to-end', () => {

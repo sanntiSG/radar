@@ -344,6 +344,44 @@ export default function DashboardPage() {
 
               <p className="mt-5 text-sm leading-relaxed text-dim">{selected.explanation}</p>
 
+              {/* Por qué esta señal — desglose de factores */}
+              {selected.factors && selected.factors.length > 0 && (
+                <div className="mt-5 border-t border-line pt-4">
+                  <p className="mb-3 text-xs font-medium text-faint">Por qué existe esta señal</p>
+                  <ul className="space-y-2.5">
+                    {selected.factors.map((factor, i) => (
+                      <li key={factor.key}>
+                        <div className="mb-1 flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-medium text-ink">{factor.label}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {factor.weight !== null && (
+                              <span className="rounded bg-soft px-1 py-0.5 font-mono text-[10px] text-faint">
+                                {factor.weight}%
+                              </span>
+                            )}
+                            <span className="font-mono text-xs tabular-nums text-dim">
+                              {factor.contribution}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-soft">
+                          <div
+                            className="h-full rounded-full bg-jade transition-all"
+                            style={{
+                              width: `${factor.contribution}%`,
+                              transitionDelay: `${i * 60}ms`,
+                              transitionDuration: '600ms',
+                              transitionTimingFunction: 'cubic-bezier(0.23,1,0.32,1)',
+                            }}
+                          />
+                        </div>
+                        <p className="mt-0.5 text-[11px] leading-relaxed text-faint">{factor.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {selected.aliases.length > 0 && (
                 <div className="mt-5 border-t border-line pt-4">
                   <p className="text-xs font-medium text-faint">Variantes agrupadas en esta señal</p>
@@ -356,22 +394,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-
-              <div className="mt-4 grid grid-cols-3 gap-x-4 gap-y-2 border-t border-line pt-4 text-xs">
-                {[
-                  ['Velocidad', selected.metrics.velocity],
-                  ['Aceleración', selected.metrics.acceleration],
-                  ['Momentum', selected.metrics.momentum],
-                  ['Frecuencia', selected.metrics.frequency],
-                  ['Engagement', selected.metrics.engagement],
-                  ['Recencia', `${selected.metrics.recency}h`],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between gap-2">
-                    <span className="text-faint">{label}</span>
-                    <span className="font-mono tabular-nums text-dim">{value}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           ) : (
             <Skeleton className="h-96" />

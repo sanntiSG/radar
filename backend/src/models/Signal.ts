@@ -36,6 +36,19 @@ const signalSchema = new Schema(
       h72: { type: Number, default: null },
       d7: { type: Number, default: null },
     },
+    factors: {
+      type: [
+        {
+          key: { type: String, required: true },
+          label: { type: String, required: true },
+          detail: { type: String, default: '' },
+          contribution: { type: Number, default: 0 },
+          weight: { type: Number, default: null },
+          _id: false,
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

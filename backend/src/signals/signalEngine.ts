@@ -4,6 +4,7 @@ import { filterNew, markProcessed } from '../cache/adapterCache';
 import {
   acceleration,
   confidence,
+  explainSignal,
   growthPct,
   growthVelocity,
   isZScoreOutlier,
@@ -191,17 +192,6 @@ function statusFor(m: SeriesMetrics): 'new' | 'rising' | 'peaking' | 'cooling' |
   return 'cooling';
 }
 
-function buildExplanation(name: string, m: SeriesMetrics, streak: number, outlier: boolean): string {
-  const parts: string[] = [];
-  const last = m.series[m.series.length - 1] ?? 0;
-  const prev = m.series[m.series.length - 2] ?? 0;
-  const pct = Math.round(growthPct(prev, last));
-  if (pct > 0) parts.push(`${name} creció ${pct}% en el último período (${prev} → ${last} menciones)`);
-  else parts.push(`${name} registra ${last} menciones en el último período`);
-  if (streak >= 2) parts.push(`acelera por ${streak} períodos consecutivos`);
-  if (outlier) parts.push('su volumen actual es una anomalía estadística respecto a su histórico');
-  return parts.join('; ') + '.';
-}
 
 /** Fase 2 — Recalcular métricas, señales y alertas desde los snapshots. */
 export async function recomputeAll(): Promise<number> {
@@ -262,7 +252,19 @@ export async function recomputeAll(): Promise<number> {
     const conf = confidence(m.series, linearRegression(m.series));
     const streak = positiveAccelerationStreak(m.series);
     const outlier = isZScoreOutlier(m.series);
-    const explanation = buildExplanation(entity.name, m, streak, outlier);
+    const explained = explainSignal({
+      name: entity.name,
+      velocity: m.velocity,
+      acceleration: m.accel,
+      frequency: m.freq,
+      engagement: m.engagementLast,
+      recencyHours: m.recencyHours,
+      changePct,
+      streak,
+      outlier,
+      prev,
+      last,
+    });
 
     // Actualizar métricas en la colección de la entidad
     if (entity.entityType === 'product') {
@@ -295,7 +297,8 @@ export async function recomputeAll(): Promise<number> {
           confidence: conf.level,
           confidenceScore: conf.score,
           status: statusFor(m),
-          explanation,
+          explanation: explained.sentence,
+          factors: explained.factors,
           sources: entity.sources,
           aliases: entity.aliases,
           metrics: {
