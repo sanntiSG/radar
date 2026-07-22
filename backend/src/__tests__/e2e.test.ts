@@ -237,4 +237,42 @@ describe('Fase 2 end-to-end', () => {
     const data = await get('/api/alerts/unseen');
     expect(data.count).toBeGreaterThan(0);
   });
+
+  it('GET /api/meta devuelve categorias, fuentes y paises (N2)', async () => {
+    const data = await get('/api/meta');
+    expect(Array.isArray(data.categories)).toBe(true);
+    expect(data.categories.length).toBeGreaterThan(5);
+    expect(data.sources.length).toBe(3);
+    expect(data.countries.length).toBeGreaterThan(5);
+    expect(data.countries[0].code).toBe('global');
+  });
+
+  it('Radar Personal: nichos/plataformas/keywords persisten en /api/me (N2)', async () => {
+    const put = await authed('/api/me', {
+      method: 'PUT',
+      body: JSON.stringify({
+        preferences: {
+          country: 'AR',
+          niches: ['Gadgets', 'Cocina'],
+          platforms: ['reddit'],
+          keywords: ['impresora', 'gadget'],
+        },
+      }),
+    });
+    expect(put.ok).toBe(true);
+    const me = await ((await authed('/api/auth/me')).json() as Promise<any>);
+    expect(me.preferences.country).toBe('AR');
+    expect(me.preferences.niches).toContain('Gadgets');
+    expect(me.preferences.platforms).toContain('reddit');
+    expect(me.preferences.keywords).toContain('impresora');
+  });
+
+  it('Radar Personal: pais invalido se ignora (N2)', async () => {
+    await authed('/api/me', {
+      method: 'PUT',
+      body: JSON.stringify({ preferences: { country: 'ZZZZ' } }),
+    });
+    const me = await ((await authed('/api/auth/me')).json() as Promise<any>);
+    expect(me.preferences.country).toBe('AR'); // previous valid value
+  });
 });

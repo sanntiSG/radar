@@ -31,7 +31,10 @@ export default function DashboardPage() {
   const signalParams = useMemo(() => {
     if (authLoading) return null;
     let params = `&sort=${preferences.defaultSort}`;
-    if (preferences.defaultCategory && preferences.defaultCategory !== 'Todas') {
+    // Niches override defaultCategory when active
+    if (preferences.niches.length === 1) {
+      params += `&category=${encodeURIComponent(preferences.niches[0])}`;
+    } else if (preferences.defaultCategory && preferences.defaultCategory !== 'Todas') {
       params += `&category=${encodeURIComponent(preferences.defaultCategory)}`;
     }
     if (preferences.defaultStatus) params += `&status=${preferences.defaultStatus}`;
@@ -62,6 +65,28 @@ export default function DashboardPage() {
       .then((h) => setHistory(h.points))
       .catch(() => setHistory([]));
   }, [selected]);
+
+  // Client-side filtering by platforms (multi-niche via API is complex, platform is post-fetch)
+  const filteredSignals = useMemo(() => {
+    if (!signals) return null;
+    let list = signals;
+    // Multi-niche: if more than 1 niche selected, filter client-side
+    if (preferences.niches.length > 1) {
+      list = list.filter((s) => preferences.niches.includes(s.category));
+    }
+    // Platform filter
+    if (preferences.platforms.length > 0) {
+      list = list.filter((s) => s.sources.some((src) => preferences.platforms.includes(src)));
+    }
+    return list;
+  }, [signals, preferences.niches, preferences.platforms]);
+
+  // Keyword matching: normalize and check name/aliases
+  const keywordMatch = useCallback((signal: Signal) => {
+    if (!preferences.keywords || preferences.keywords.length === 0) return false;
+    const haystack = [signal.name, ...signal.aliases].join(' ').toLowerCase();
+    return preferences.keywords.some((kw) => haystack.includes(kw.toLowerCase()));
+  }, [preferences.keywords]);
 
   const loadPins = useCallback(async () => {
     if (!user) return;
@@ -169,20 +194,23 @@ export default function DashboardPage() {
       <section key="feed" aria-label="Feed de señales">
         <h2 className="font-display text-sm font-bold text-dim">
           Señales
-          {preferences.defaultCategory !== 'Todas' && (
+          {(preferences.niches.length > 0 || preferences.defaultCategory !== 'Todas') && (
             <span className="ml-2 font-body text-xs font-normal text-faint">
-              filtrado: {preferences.defaultCategory} ·{' '}
+              {preferences.niches.length > 0
+                ? `nichos: ${preferences.niches.slice(0, 2).join(', ')}${preferences.niches.length > 2 ? '…' : ''}`
+                : `filtrado: ${preferences.defaultCategory}`}{' '}
+              ·{' '}
               <Link href="/dashboard/profile" className="underline hover:text-ink">cambiar</Link>
             </span>
           )}
         </h2>
-        {!signals ? (
+        {!filteredSignals ? (
           <div className="mt-2 space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-16" />
             ))}
           </div>
-        ) : signals.length === 0 ? (
+        ) : filteredSignals.length === 0 ? (
           <div className="mt-2 rounded-xl border border-line bg-elev p-10 text-center">
             <p className="font-display text-lg font-bold">El radar está en silencio</p>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-dim">
@@ -192,49 +220,59 @@ export default function DashboardPage() {
           </div>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--border)]">
-            {signals.map((signal, i) => (
-              <li key={signal._id} className="rise-in" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                <div
-                  className={`flex w-full items-center gap-3 px-3 py-3.5 transition-colors duration-150 hover:bg-elev md:gap-5 ${
-                    selected?.slug === signal.slug ? 'bg-elev' : ''
-                  }`}
-                >
-                  {user && (
-                    <button
-                      onClick={() => togglePin(signal)}
-                      className={`pressable shrink-0 text-base leading-none transition-colors duration-150 ${
-                        pinnedSlugs.has(signal.slug) ? 'text-jade' : 'text-faint hover:text-dim'
-                      }`}
-                      title={pinnedSlugs.has(signal.slug) ? 'Quitar de mi watchlist' : 'Fijar en mi watchlist'}
-                      aria-pressed={pinnedSlugs.has(signal.slug)}
-                    >
-                      {pinnedSlugs.has(signal.slug) ? '★' : '☆'}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setSelected(signal)}
-                    className="flex min-w-0 flex-1 items-center gap-4 text-left md:gap-6"
+            {filteredSignals.map((signal, i) => {
+              const isKeyword = keywordMatch(signal);
+              return (
+                <li key={signal._id} className="rise-in" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
+                  <div
+                    className={`flex w-full items-center gap-3 px-3 py-3.5 transition-colors duration-150 hover:bg-elev md:gap-5 ${
+                      selected?.slug === signal.slug ? 'bg-elev' : ''
+                    }`}
                   >
-                    <Score value={signal.radarScore} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{signal.name}</span>
-                      <span className="mt-0.5 flex items-center gap-2 text-xs text-faint">
-                        <span>{ENTITY_LABELS[signal.entityType]}</span>
-                        <span aria-hidden>·</span>
-                        <span>{signal.category}</span>
+                    {user && (
+                      <button
+                        onClick={() => togglePin(signal)}
+                        className={`pressable shrink-0 text-base leading-none transition-colors duration-150 ${
+                          pinnedSlugs.has(signal.slug) ? 'text-jade' : 'text-faint hover:text-dim'
+                        }`}
+                        title={pinnedSlugs.has(signal.slug) ? 'Quitar de mi watchlist' : 'Fijar en mi watchlist'}
+                        aria-pressed={pinnedSlugs.has(signal.slug)}
+                      >
+                        {pinnedSlugs.has(signal.slug) ? '★' : '☆'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelected(signal)}
+                      className="flex min-w-0 flex-1 items-center gap-4 text-left md:gap-6"
+                    >
+                      <Score value={signal.radarScore} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5">
+                          <span className="block truncate font-medium">{signal.name}</span>
+                          {isKeyword && (
+                            <span className="shrink-0 rounded bg-jade/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-jade">
+                              keyword
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-2 text-xs text-faint">
+                          <span>{ENTITY_LABELS[signal.entityType]}</span>
+                          <span aria-hidden>·</span>
+                          <span>{signal.category}</span>
+                        </span>
                       </span>
-                    </span>
-                    <span className="hidden sm:block">
-                      <Sparkline data={signal.sparkline} />
-                    </span>
-                    <GrowthPct value={signal.growthScore} />
-                    <span className="hidden md:block">
-                      <StatusBadge status={signal.status} />
-                    </span>
-                  </button>
-                </div>
-              </li>
-            ))}
+                      <span className="hidden sm:block">
+                        <Sparkline data={signal.sparkline} />
+                      </span>
+                      <GrowthPct value={signal.growthScore} />
+                      <span className="hidden md:block">
+                        <StatusBadge status={signal.status} />
+                      </span>
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

@@ -2,6 +2,21 @@ import { Schema, model, type InferSchemaType } from 'mongoose';
 
 export const ACCENTS = ['jade', 'amber', 'azure', 'violet'] as const;
 export const SECTION_IDS = ['stats', 'feed', 'insights', 'watchlist'] as const;
+export const SOURCE_IDS = ['reddit', 'google-trends', 'rss'] as const;
+
+export const COUNTRIES: { code: string; label: string }[] = [
+  { code: 'global', label: 'Global' },
+  { code: 'AR', label: 'Argentina' },
+  { code: 'MX', label: 'México' },
+  { code: 'CO', label: 'Colombia' },
+  { code: 'CL', label: 'Chile' },
+  { code: 'PE', label: 'Perú' },
+  { code: 'ES', label: 'España' },
+  { code: 'UY', label: 'Uruguay' },
+  { code: 'EC', label: 'Ecuador' },
+  { code: 'US', label: 'Estados Unidos' },
+  { code: 'BR', label: 'Brasil' },
+];
 
 const sectionPrefSchema = new Schema(
   {
@@ -23,6 +38,11 @@ const preferencesSchema = new Schema(
       default: () =>
         SECTION_IDS.map((id, order) => ({ id, visible: true, order })),
     },
+    // Radar Personal
+    country: { type: String, default: 'global' },
+    niches: { type: [String], default: [] },
+    platforms: { type: [String], default: [] },
+    keywords: { type: [String], default: [] },
   },
   { _id: false }
 );

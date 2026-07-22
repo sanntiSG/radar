@@ -31,6 +31,11 @@ export interface Preferences {
   defaultSort: 'radarScore' | 'detectedAt';
   defaultStatus: string;
   sections: SectionPref[];
+  // Radar Personal
+  country: string;
+  niches: string[];
+  platforms: string[];
+  keywords: string[];
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -44,6 +49,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
     { id: 'insights', visible: true, order: 2 },
     { id: 'watchlist', visible: true, order: 3 },
   ],
+  country: 'global',
+  niches: [],
+  platforms: [],
+  keywords: [],
 };
 
 interface AuthContextValue {
@@ -84,7 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applySession = useCallback(
     (nextUser: SessionUser | null, prefs: Preferences | null) => {
       setUser(nextUser);
-      setPreferences(prefs ?? DEFAULT_PREFERENCES);
+      // Merge with defaults to handle users created before new fields were added
+      setPreferences(prefs ? { ...DEFAULT_PREFERENCES, ...prefs } : DEFAULT_PREFERENCES);
       document.documentElement.dataset.accent = prefs?.accent ?? 'jade';
     },
     []

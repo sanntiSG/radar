@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { authRequired } from '../middlewares/auth';
 import { User } from '../models';
-import { ACCENTS, SECTION_IDS } from '../models/User';
+import { ACCENTS, COUNTRIES, SECTION_IDS, SOURCE_IDS } from '../models/User';
+import { CATEGORIES } from '../services/taxonomy';
 import { asyncHandler } from './helpers';
 
 export const meRouter = Router();
@@ -38,6 +39,10 @@ meRouter.put(
         defaultSort?: string;
         defaultStatus?: string;
         sections?: { id: string; visible: boolean; order: number }[];
+        country?: string;
+        niches?: string[];
+        platforms?: string[];
+        keywords?: string[];
       };
     };
 
@@ -68,6 +73,30 @@ meRouter.put(
             order: Number.isFinite(s.order) ? s.order : i,
           }));
         }
+      }
+      // Radar Personal
+      const validCountryCodes = COUNTRIES.map((c) => c.code);
+      if (typeof preferences.country === 'string' && validCountryCodes.includes(preferences.country)) {
+        $set['preferences.country'] = preferences.country;
+      }
+      if (Array.isArray(preferences.niches)) {
+        const validNiches = (preferences.niches as string[]).filter((n) =>
+          (CATEGORIES as readonly string[]).includes(n)
+        );
+        $set['preferences.niches'] = validNiches.slice(0, 11);
+      }
+      if (Array.isArray(preferences.platforms)) {
+        const validPlatforms = (preferences.platforms as string[]).filter((p) =>
+          (SOURCE_IDS as readonly string[]).includes(p)
+        );
+        $set['preferences.platforms'] = validPlatforms;
+      }
+      if (Array.isArray(preferences.keywords)) {
+        const cleanKeywords = (preferences.keywords as string[])
+          .map((k: string) => String(k).trim().slice(0, 40))
+          .filter(Boolean)
+          .slice(0, 12);
+        $set['preferences.keywords'] = cleanKeywords;
       }
     }
 

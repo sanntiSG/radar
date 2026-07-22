@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_PREFERENCES,
   useAuth,
@@ -28,10 +28,34 @@ const CATEGORIES = [
   'Hogar', 'Tecnología', 'Moda', 'Automotor', 'Salud y bienestar',
 ];
 
+const NICHES = ['Gadgets', 'Belleza', 'Fitness', 'Mascotas', 'Cocina', 'Hogar', 'Tecnología', 'Moda', 'Automotor', 'Salud y bienestar', 'General'];
+
+const PLATFORMS = [
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'google-trends', label: 'Google Trends' },
+  { id: 'rss', label: 'RSS / Blogs' },
+];
+
+const COUNTRIES = [
+  { code: 'global', label: 'Global' },
+  { code: 'AR', label: 'Argentina' },
+  { code: 'MX', label: 'México' },
+  { code: 'CO', label: 'Colombia' },
+  { code: 'CL', label: 'Chile' },
+  { code: 'PE', label: 'Perú' },
+  { code: 'ES', label: 'España' },
+  { code: 'UY', label: 'Uruguay' },
+  { code: 'EC', label: 'Ecuador' },
+  { code: 'US', label: 'Estados Unidos' },
+  { code: 'BR', label: 'Brasil' },
+];
+
 export default function ProfilePage() {
   const { user, preferences, loading, updatePreferences, logout } = useAuth();
   const [draft, setDraft] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [saved, setSaved] = useState<'idle' | 'saving' | 'ok' | 'error'>('idle');
+  const [kwInput, setKwInput] = useState('');
+  const kwRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDraft(preferences);
@@ -204,7 +228,7 @@ export default function ProfilePage() {
       </section>
 
       {/* Filtros por defecto */}
-      <section className="mt-10 pb-10" aria-label="Filtros por defecto">
+      <section className="mt-10" aria-label="Filtros por defecto">
         <h2 className="font-display text-sm font-bold text-dim">Filtros por defecto del feed</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="block">
@@ -232,6 +256,149 @@ export default function ProfilePage() {
               <option value="detectedAt">Más recientes</option>
             </select>
           </label>
+        </div>
+      </section>
+
+      {/* Radar Personal */}
+      <section className="mt-10 pb-10" aria-label="Radar Personal">
+        <h2 className="font-display text-sm font-bold text-dim">Radar Personal</h2>
+        <p className="mt-1 text-xs leading-relaxed text-faint">
+          Ajusta Radar a tu mercado. Los nichos y keywords priorizan señales relevantes para ti.
+          El país afecta las tendencias de Google Trends.
+        </p>
+
+        {/* País */}
+        <div className="mt-4">
+          <label className="block">
+            <span className="text-xs text-faint">País / Mercado</span>
+            <select
+              value={draft.country ?? 'global'}
+              onChange={(e) => save({ ...draft, country: e.target.value })}
+              className="mt-1 w-full max-w-xs rounded-lg border border-line bg-elev px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-jade"
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {/* Nichos de interés */}
+        <div className="mt-5">
+          <span className="text-xs text-faint">Nichos de interés</span>
+          <p className="mt-0.5 text-[11px] text-faint">
+            Selecciona las categorías que sigues — el feed las priorizará.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {NICHES.map((niche) => {
+              const active = (draft.niches ?? []).includes(niche);
+              return (
+                <button
+                  key={niche}
+                  onClick={() => {
+                    const current = draft.niches ?? [];
+                    const next = active ? current.filter((n) => n !== niche) : [...current, niche];
+                    save({ ...draft, niches: next });
+                  }}
+                  className={`pressable rounded-full border px-3 py-1.5 text-xs transition-colors duration-150 ${
+                    active
+                      ? 'border-jade bg-jade/10 font-medium text-jade'
+                      : 'border-line text-dim hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {niche}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Plataformas */}
+        <div className="mt-5">
+          <span className="text-xs text-faint">Plataformas de datos</span>
+          <p className="mt-0.5 text-[11px] text-faint">
+            Filtra el feed por origen de datos. Sin selección = todas las plataformas.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PLATFORMS.map((plat) => {
+              const active = (draft.platforms ?? []).includes(plat.id);
+              return (
+                <button
+                  key={plat.id}
+                  onClick={() => {
+                    const current = draft.platforms ?? [];
+                    const next = active ? current.filter((p) => p !== plat.id) : [...current, plat.id];
+                    save({ ...draft, platforms: next });
+                  }}
+                  className={`pressable rounded-full border px-3 py-1.5 text-xs transition-colors duration-150 ${
+                    active
+                      ? 'border-jade bg-jade/10 font-medium text-jade'
+                      : 'border-line text-dim hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {plat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Keywords */}
+        <div className="mt-5">
+          <span className="text-xs text-faint">Keywords de interés</span>
+          <p className="mt-0.5 text-[11px] text-faint">
+            Términos, productos o nichos que quieres seguir (máx. 12).
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(draft.keywords ?? []).map((kw) => (
+              <span key={kw} className="flex items-center gap-1 rounded-md bg-soft px-2.5 py-1 text-xs text-dim">
+                {kw}
+                <button
+                  onClick={() => save({ ...draft, keywords: (draft.keywords ?? []).filter((k) => k !== kw) })}
+                  className="pressable ml-0.5 text-faint hover:text-ink"
+                  aria-label={`Quitar ${kw}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          {(draft.keywords ?? []).length < 12 && (
+            <div className="mt-2 flex gap-2">
+              <input
+                ref={kwRef}
+                type="text"
+                value={kwInput}
+                onChange={(e) => setKwInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ',') && kwInput.trim()) {
+                    e.preventDefault();
+                    const kw = kwInput.trim().toLowerCase();
+                    if (kw && !(draft.keywords ?? []).includes(kw)) {
+                      save({ ...draft, keywords: [...(draft.keywords ?? []), kw] });
+                    }
+                    setKwInput('');
+                  }
+                }}
+                placeholder="Ej: impresora, fitness tracker…"
+                className="flex-1 rounded-lg border border-line bg-elev px-3 py-2 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-faint focus:border-jade"
+              />
+              <button
+                onClick={() => {
+                  const kw = kwInput.trim().toLowerCase();
+                  if (kw && !(draft.keywords ?? []).includes(kw)) {
+                    save({ ...draft, keywords: [...(draft.keywords ?? []), kw] });
+                  }
+                  setKwInput('');
+                  kwRef.current?.focus();
+                }}
+                disabled={!kwInput.trim()}
+                className="pressable rounded-lg border border-line px-3 py-2 text-sm text-dim transition-colors duration-150 hover:border-jade hover:text-ink disabled:opacity-40"
+              >
+                Añadir
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </div>
