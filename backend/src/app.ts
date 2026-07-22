@@ -16,6 +16,7 @@ import { meRouter } from './routes/me';
 import { exportRouter } from './routes/exportCsv';
 import { metaRouter } from './routes/meta';
 import { opportunitiesRouter } from './routes/opportunities';
+import { assistantRouter } from './routes/assistant';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 
 export function createApp() {
@@ -39,6 +40,7 @@ export function createApp() {
   app.use('/api/export', exportRouter);
   app.use('/api/meta', metaRouter);
   app.use('/api/opportunities', opportunitiesRouter);
+  app.use('/api/assistant', assistantRouter);
 
   app.use(notFound);
   app.use(errorHandler);

@@ -106,6 +106,13 @@ export interface Stats {
   avgRadarScore: number;
 }
 
+export interface AssistantResponse {
+  answer: string;
+  kind: string;
+  signals?: Signal[];
+  suggestions?: string[];
+}
+
 export interface Opportunity {
   _id: string;
   name: string;

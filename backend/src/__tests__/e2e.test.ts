@@ -276,6 +276,48 @@ describe('Fase 2 end-to-end', () => {
     expect(me.preferences.country).toBe('AR'); // previous valid value
   });
 
+  it('POST /api/assistant/query — intencion top, categoria y fuentes (N4)', async () => {
+    // Intent: top
+    const top = await fetch(`${base}/api/assistant/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: 'qué está creciendo ahora' }),
+    });
+    expect(top.ok).toBe(true);
+    const topData = (await top.json()) as any;
+    expect(['top', 'category', 'opportunities']).toContain(topData.kind);
+    expect(typeof topData.answer).toBe('string');
+    expect(topData.answer.length).toBeGreaterThan(5);
+
+    // Intent: category
+    const cat = await fetch(`${base}/api/assistant/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: 'señales de gadgets' }),
+    });
+    const catData = (await cat.json()) as any;
+    expect(catData.kind).toBe('category');
+    expect(catData.signals.length).toBeGreaterThan(0);
+
+    // Intent: sources
+    const src = await fetch(`${base}/api/assistant/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: 'de dónde vienen los datos' }),
+    });
+    const srcData = (await src.json()) as any;
+    expect(srcData.kind).toBe('sources');
+
+    // Intent: stats
+    const stats = await fetch(`${base}/api/assistant/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: 'cuántas señales hay en total' }),
+    });
+    const statsData = (await stats.json()) as any;
+    expect(statsData.kind).toBe('stats');
+  });
+
   it('GET /api/opportunities devuelve senales ordenadas por opportunityScore (N3)', async () => {
     const data = await get('/api/opportunities');
     expect(Array.isArray(data.items)).toBe(true);
