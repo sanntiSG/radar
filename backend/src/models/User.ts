@@ -55,6 +55,9 @@ const userSchema = new Schema(
     avatarUrl: { type: String, default: '' },
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
     preferences: { type: preferencesSchema, default: () => ({}) },
+    // Racha diaria
+    streak: { type: Number, default: 0 },
+    lastActiveDate: { type: String, default: '' }, // ISO date YYYY-MM-DD
   },
   { timestamps: true }
 );

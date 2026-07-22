@@ -1,4 +1,5 @@
 import type {
+  DailyResponse,
   Hashtag,
   HistoryPoint,
   Insight,
@@ -31,4 +32,5 @@ export const api = {
     get<{ points: HistoryPoint[] }>(`/api/history/${entityType}/${slug}`),
   sources: () => get<SourcesResponse>('/api/sources'),
   opportunities: () => get<{ items: Opportunity[]; total: number }>('/api/opportunities'),
+  daily: () => get<DailyResponse>('/api/daily'),
 };

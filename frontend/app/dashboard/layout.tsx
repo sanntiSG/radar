@@ -9,6 +9,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 const NAV = [
   { href: '/dashboard', label: 'Señales' },
+  { href: '/dashboard/daily', label: 'Radar Diario' },
   { href: '/dashboard/opportunities', label: 'Oportunidades' },
   { href: '/dashboard/assistant', label: 'Asistente' },
   { href: '/dashboard/trends', label: 'Tendencias' },

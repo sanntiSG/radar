@@ -325,6 +325,21 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
         <div className="min-w-0 space-y-8">
+          {/* Radar Diario teaser */}
+          <Link
+            href="/dashboard/daily"
+            className="group flex items-center justify-between rounded-xl border border-line bg-elev/40 px-4 py-3 transition-colors duration-150 hover:border-jade/50 hover:bg-elev"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-base leading-none text-jade">◎</span>
+              <div>
+                <p className="text-sm font-semibold">Radar Diario</p>
+                <p className="text-xs text-faint">Tu resumen personalizado de hoy</p>
+              </div>
+            </div>
+            <span className="text-xs text-faint transition-colors group-hover:text-jade">→</span>
+          </Link>
+
           {visibleSections.map((section) => sectionRender[section.id])}
           {visibleSections.length === 0 && (
             <div className="rounded-xl border border-line bg-elev p-10 text-center text-sm text-dim">

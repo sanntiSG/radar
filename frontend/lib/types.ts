@@ -106,6 +106,19 @@ export interface Stats {
   avgRadarScore: number;
 }
 
+export interface DailyResponse {
+  date: string;
+  streak: number;
+  sections: {
+    new: Signal[];
+    rising: Signal[];
+    moving: Signal[];
+    opportunityOfDay: Signal | null;
+    predictionOfDay: Signal | null;
+    keywordHighlights: Signal[];
+  };
+}
+
 export interface AssistantResponse {
   answer: string;
   kind: string;

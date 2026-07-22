@@ -331,4 +331,44 @@ describe('Fase 2 end-to-end', () => {
       expect(data.items[i - 1].opportunityScore).toBeGreaterThanOrEqual(data.items[i].opportunityScore);
     }
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // N5 — Radar Diario
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('GET /api/daily devuelve secciones no vacías (N5)', async () => {
+    const data = await get('/api/daily');
+
+    // Estructura base
+    expect(typeof data.date).toBe('string');
+    expect(data.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(typeof data.streak).toBe('number');
+
+    // Secciones presentes
+    expect(data.sections).toBeDefined();
+    expect(Array.isArray(data.sections.new)).toBe(true);
+    expect(Array.isArray(data.sections.rising)).toBe(true);
+    expect(Array.isArray(data.sections.moving)).toBe(true);
+    expect(Array.isArray(data.sections.keywordHighlights)).toBe(true);
+
+    // Al menos una sección con datos (entre rising y moving)
+    const hasData = data.sections.rising.length > 0 || data.sections.moving.length > 0;
+    expect(hasData).toBe(true);
+  });
+
+  it('GET /api/daily opportunityOfDay es una señal válida o null (N5)', async () => {
+    const data = await get('/api/daily');
+    if (data.sections.opportunityOfDay !== null) {
+      const signal = data.sections.opportunityOfDay;
+      expect(typeof signal.name).toBe('string');
+      expect(typeof signal.radarScore).toBe('number');
+      expect(typeof signal.slug).toBe('string');
+    }
+  });
+
+  it('GET /api/daily streak arranca en 0 para usuarios anónimos (N5)', async () => {
+    const data = await get('/api/daily');
+    // Sin token = anónimo → streak siempre 0
+    expect(data.streak).toBe(0);
+  });
 });

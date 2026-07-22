@@ -1,0 +1,222 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import type { DailyResponse, Signal } from '@/lib/types';
+import { Score, Skeleton, Sparkline, StatusBadge, GrowthPct } from '@/components/dashboard/ui';
+
+function SignalRow({ signal }: { signal: Signal }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg bg-soft/50 px-3 py-2.5">
+      <Score value={signal.radarScore} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{signal.name}</p>
+        <p className="text-xs text-faint">{signal.category}</p>
+      </div>
+      <Sparkline data={signal.sparkline} />
+      <GrowthPct value={signal.growthScore} />
+      <StatusBadge status={signal.status} />
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="font-display text-sm font-bold text-dim">{children}</h2>;
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso + 'T12:00:00Z').toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
+export default function DailyPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [data, setData] = useState<DailyResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .daily()
+      .then(setData)
+      .catch(() => setError('No se pudo cargar el Radar Diario.'));
+  }, []);
+
+  const greeting = user
+    ? `Buenos días, ${(user.name || 'explorador').split(' ')[0]}`
+    : 'Tu resumen de hoy';
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">
+      <header className="border-b border-line pb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight">{greeting}</h1>
+            {data && (
+              <p className="mt-1 text-sm text-dim capitalize">{formatDate(data.date)}</p>
+            )}
+            <p className="mt-1 text-sm text-faint">
+              Lo más relevante del mercado detectado hoy.
+            </p>
+          </div>
+          {data && data.streak > 0 && (
+            <div className="flex flex-col items-center rounded-xl border border-line bg-elev px-4 py-3 text-center">
+              <span className="font-display text-2xl font-bold text-jade">{data.streak}</span>
+              <span className="mt-0.5 text-[11px] text-faint">
+                {data.streak === 1 ? 'día de racha' : 'días seguidos'}
+              </span>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {error && <p className="mt-6 text-sm text-dim">{error}</p>}
+
+      {!data && !error && (
+        <div className="mt-6 space-y-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+      )}
+
+      {data && (
+        <div className="mt-6 space-y-8">
+          {/* Oportunidad del día */}
+          {data.sections.opportunityOfDay && (
+            <section>
+              <SectionTitle>Oportunidad del día</SectionTitle>
+              <p className="mt-0.5 text-xs text-faint">
+                Señal rotativa seleccionada por el motor para hoy — úsala como punto de partida.
+              </p>
+              <div className="mt-3 rise-in">
+                <SignalRow signal={data.sections.opportunityOfDay} />
+              </div>
+            </section>
+          )}
+
+          {/* Keyword highlights */}
+          {data.sections.keywordHighlights.length > 0 && (
+            <section>
+              <SectionTitle>Tus keywords hoy</SectionTitle>
+              <p className="mt-0.5 text-xs text-faint">
+                Señales que coinciden con tus términos de interés.{' '}
+                <Link href="/dashboard/profile" className="text-jade underline">Gestionar keywords</Link>
+              </p>
+              <div className="mt-3 space-y-2">
+                {data.sections.keywordHighlights.map((s) => (
+                  <div key={s._id} className="rise-in">
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* En ascenso */}
+          {data.sections.rising.length > 0 && (
+            <section>
+              <SectionTitle>En ascenso</SectionTitle>
+              <div className="mt-3 space-y-2">
+                {data.sections.rising.map((s, i) => (
+                  <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Mayor movimiento */}
+          {data.sections.moving.length > 0 && (
+            <section>
+              <SectionTitle>Mayor movimiento hoy</SectionTitle>
+              <div className="mt-3 space-y-2">
+                {data.sections.moving.map((s, i) => (
+                  <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Nuevas detecciones */}
+          {data.sections.new.length > 0 && (
+            <section>
+              <SectionTitle>Nuevas detecciones</SectionTitle>
+              <div className="mt-3 space-y-2">
+                {data.sections.new.map((s, i) => (
+                  <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Predicción del día */}
+          {data.sections.predictionOfDay && (
+            <section>
+              <SectionTitle>Predicción del motor</SectionTitle>
+              <p className="mt-0.5 text-xs text-faint">
+                Señal con confianza alta y proyección de crecimiento en 7 días.
+              </p>
+              <div className="mt-3 rise-in">
+                <div className="rounded-xl border border-line bg-elev/60 p-4">
+                  <div className="flex items-start gap-4">
+                    <Score value={data.sections.predictionOfDay.radarScore} size="lg" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-display font-semibold">{data.sections.predictionOfDay.name}</p>
+                      <p className="mt-1 text-xs text-faint">{data.sections.predictionOfDay.category}</p>
+                      {data.sections.predictionOfDay.predictions && (
+                        <div className="mt-2 flex gap-4 text-xs">
+                          {[
+                            ['24h', data.sections.predictionOfDay.predictions.h24],
+                            ['72h', data.sections.predictionOfDay.predictions.h72],
+                            ['7d', data.sections.predictionOfDay.predictions.d7],
+                          ].map(([label, val]) => (
+                            <span key={String(label)}>
+                              <span className="text-faint">{label}: </span>
+                              <span className="font-mono font-medium text-dim">{val ?? '—'}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Sparkline data={data.sections.predictionOfDay.sparkline} />
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* CTA */}
+          <section className="rounded-xl border border-line bg-elev/40 p-5 text-center">
+            <p className="text-sm font-medium">
+              Explora el dashboard completo o pregúntale al Asistente.
+            </p>
+            <div className="mt-3 flex justify-center gap-3">
+              <Link
+                href="/dashboard"
+                className="pressable rounded-full border border-line px-4 py-2 text-sm text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
+              >
+                Ver señales
+              </Link>
+              <Link
+                href="/dashboard/assistant"
+                className="pressable rounded-full bg-jade px-4 py-2 text-sm font-semibold text-[oklch(18%_0.02_165)]"
+              >
+                Preguntar al Asistente
+              </Link>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
