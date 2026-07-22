@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/auth';
+import { authFetch, useAuth } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -73,14 +73,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [unseen, setUnseen] = useState(0);
 
   useEffect(() => {
-    fetch(`${API}/api/alerts/unseen`)
-      .then((r) => r.json())
-      .then((data) => setUnseen(data.count ?? 0))
+    // Authenticated users get global + personal alerts unseen count
+    const fetchUnseen = user
+      ? authFetch('/api/alerts/unseen')
+      : fetch(`${API}/api/alerts/unseen`).then((r) => r.json());
+    fetchUnseen
+      .then((data: any) => setUnseen(data.count ?? 0))
       .catch(() => undefined);
-  }, [pathname]);
+  }, [pathname, user]);
 
   return (
     <div className="flex min-h-screen flex-col bg-bg text-ink md:flex-row">

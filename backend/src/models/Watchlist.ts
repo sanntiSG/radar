@@ -13,6 +13,13 @@ const watchlistSchema = new Schema(
         },
         slug: { type: String, required: true },
         addedAt: { type: Date, default: Date.now },
+        /** Configuración de alertas personales para este pin */
+        notify: {
+          radarScoreAbove: { type: Number, default: null },
+          onAccelerate: { type: Boolean, default: false },
+          onNewOutlier: { type: Boolean, default: false },
+          _id: false,
+        },
       },
     ],
   },

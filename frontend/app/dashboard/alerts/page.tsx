@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { authFetch, useAuth } from '@/lib/auth';
 import { relativeDate } from '@/lib/format';
 import { Skeleton } from '@/components/dashboard/ui';
 
@@ -14,6 +16,7 @@ interface AlertItem {
   message: string;
   seen: boolean;
   triggeredAt: string;
+  userId: string | null;
 }
 
 const TYPE_LABELS: Record<AlertItem['type'], string> = {
@@ -23,15 +26,19 @@ const TYPE_LABELS: Record<AlertItem['type'], string> = {
 };
 
 export default function AlertsPage() {
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<AlertItem[] | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${BASE}/api/alerts?limit=50`)
-      .then((r) => r.json())
-      .then((data) => setAlerts(data.items))
+    const fetchAlerts = user
+      ? authFetch('/api/alerts?limit=50')
+      : fetch(`${BASE}/api/alerts?limit=50`).then((r) => r.json());
+
+    fetchAlerts
+      .then((data: any) => setAlerts(data.items))
       .catch(() => setError(true));
-  }, []);
+  }, [user]);
 
   const markSeen = async (alert: AlertItem) => {
     setAlerts((prev) =>
@@ -47,8 +54,13 @@ export default function AlertsPage() {
       <header className="border-b border-line pb-6">
         <h1 className="font-display text-2xl font-bold tracking-tight">Alertas del motor</h1>
         <p className="mt-1 max-w-[65ch] text-sm text-dim">
-          Radar avisa cuando una señal supera un Radar Score de 75, muestra una
-          anomalía estadística o acelera varios períodos seguidos.
+          Radar avisa cuando una señal supera un Radar Score de 75, muestra una anomalía
+          estadística o acelera varios períodos seguidos.
+          {user && (
+            <> También incluye alertas de tus{' '}
+              <Link href="/dashboard" className="text-jade underline">pines con notificaciones activas</Link>.
+            </>
+          )}
         </p>
       </header>
 
@@ -66,42 +78,52 @@ export default function AlertsPage() {
         <div className="mt-6 rounded-xl border border-line bg-elev p-10 text-center">
           <p className="font-display text-lg font-bold">Sin alertas por ahora</p>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-dim">
-            Cuando el motor detecte scores altos, outliers o aceleraciones
-            sostenidas, aparecerán aquí.
+            Cuando el motor detecte scores altos, outliers o aceleraciones sostenidas,
+            aparecerán aquí. Configura notificaciones en tus pines del dashboard.
           </p>
         </div>
       ) : (
         <ul className="mt-4 divide-y divide-[var(--border)]">
-          {alerts.map((alert, i) => (
-            <li
-              key={alert._id}
-              className="rise-in flex items-start gap-4 px-2 py-4"
-              style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
-            >
-              <span
-                className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                  alert.seen ? 'bg-soft' : 'bg-jade'
-                }`}
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm leading-relaxed ${alert.seen ? 'text-faint' : 'text-ink'}`}>
-                  {alert.message}
-                </p>
-                <p className="mt-1 text-xs text-faint">
-                  {TYPE_LABELS[alert.type]} · {relativeDate(alert.triggeredAt)}
-                </p>
-              </div>
-              {!alert.seen && (
-                <button
-                  onClick={() => markSeen(alert)}
-                  className="pressable shrink-0 rounded-full border border-line px-3 py-1.5 text-xs text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
-                >
-                  Marcar vista
-                </button>
-              )}
-            </li>
-          ))}
+          {alerts.map((alert, i) => {
+            const isPersonal = user && alert.userId != null;
+            return (
+              <li
+                key={alert._id}
+                className="rise-in flex items-start gap-4 px-2 py-4"
+                style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
+              >
+                <span
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                    alert.seen ? 'bg-soft' : 'bg-jade'
+                  }`}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm leading-relaxed ${alert.seen ? 'text-faint' : 'text-ink'}`}>
+                    {alert.message}
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-xs text-faint">
+                      {TYPE_LABELS[alert.type]} · {relativeDate(alert.triggeredAt)}
+                    </span>
+                    {isPersonal && (
+                      <span className="rounded bg-jade/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-jade">
+                        mi pin
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!alert.seen && (
+                  <button
+                    onClick={() => markSeen(alert)}
+                    className="pressable shrink-0 rounded-full border border-line px-3 py-1.5 text-xs text-dim transition-colors duration-150 hover:border-jade hover:text-ink"
+                  >
+                    Marcar vista
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

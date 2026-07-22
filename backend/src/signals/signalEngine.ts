@@ -15,6 +15,7 @@ import {
   radarScore,
 } from '../engine';
 import { Alert, Hashtag, Product, Signal, Snapshot, Trend } from '../models';
+import { Watchlist } from '../models/Watchlist';
 import { JobRun } from '../models/JobRun';
 import { canonicalize, type KnownEntity } from '../services/canonicalize';
 import { aggregateHashtags, extractCandidates } from './extract';
@@ -318,11 +319,11 @@ export async function recomputeAll(): Promise<number> {
     );
     signals++;
 
-    // Alertas
+    // ─── Alertas globales (sin userId) ───────────────────────────────────
     const alertBase = { entityType: entity.entityType, slug: entity.slug } as const;
     if (score >= 75) {
       await Alert.updateOne(
-        { ...alertBase, type: 'radar_score' },
+        { ...alertBase, type: 'radar_score', userId: null },
         {
           $set: {
             message: `${entity.name} alcanzó un Radar Score de ${score}`,
@@ -334,7 +335,7 @@ export async function recomputeAll(): Promise<number> {
     }
     if (outlier) {
       await Alert.updateOne(
-        { ...alertBase, type: 'outlier' },
+        { ...alertBase, type: 'outlier', userId: null },
         {
           $set: {
             message: `${entity.name} muestra un volumen anómalo (outlier Z-Score)`,
@@ -346,7 +347,7 @@ export async function recomputeAll(): Promise<number> {
     }
     if (streak >= 3) {
       await Alert.updateOne(
-        { ...alertBase, type: 'acceleration' },
+        { ...alertBase, type: 'acceleration', userId: null },
         {
           $set: {
             message: `${entity.name} acelera por ${streak} períodos consecutivos`,
@@ -355,6 +356,55 @@ export async function recomputeAll(): Promise<number> {
         },
         { upsert: true }
       );
+    }
+
+    // ─── Alertas personales — evaluar notify de cada watchlist que fijó este slug ───
+    const watchlistsWithPin = await Watchlist.find(
+      { 'items.slug': entity.slug, userId: { $ne: null } },
+      { userId: 1, items: 1 }
+    ).lean();
+
+    for (const wl of watchlistsWithPin) {
+      const pin = wl.items.find((i: any) => i.slug === entity.slug) as any;
+      if (!pin?.notify) continue;
+      const { radarScoreAbove, onAccelerate, onNewOutlier } = pin.notify;
+
+      if (radarScoreAbove != null && score >= radarScoreAbove) {
+        await Alert.updateOne(
+          { ...alertBase, type: 'radar_score', userId: wl.userId },
+          {
+            $set: {
+              message: `${entity.name} superó tu umbral de Radar Score (${score} ≥ ${radarScoreAbove})`,
+              value: score, threshold: radarScoreAbove, triggeredAt: new Date(), seen: false,
+            },
+          },
+          { upsert: true }
+        );
+      }
+      if (onAccelerate && streak >= 3) {
+        await Alert.updateOne(
+          { ...alertBase, type: 'acceleration', userId: wl.userId },
+          {
+            $set: {
+              message: `${entity.name} acelera por ${streak} períodos — señal de tu watchlist`,
+              value: streak, threshold: 3, triggeredAt: new Date(), seen: false,
+            },
+          },
+          { upsert: true }
+        );
+      }
+      if (onNewOutlier && outlier) {
+        await Alert.updateOne(
+          { ...alertBase, type: 'outlier', userId: wl.userId },
+          {
+            $set: {
+              message: `${entity.name} muestra volumen anómalo — señal de tu watchlist`,
+              value: last, triggeredAt: new Date(), seen: false,
+            },
+          },
+          { upsert: true }
+        );
+      }
     }
   }
 

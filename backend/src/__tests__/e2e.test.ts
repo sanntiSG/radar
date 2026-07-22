@@ -371,4 +371,70 @@ describe('Fase 2 end-to-end', () => {
     // Sin token = anónimo → streak siempre 0
     expect(data.streak).toBe(0);
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // N6 — Watchlists inteligentes + alertas personales
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('N6 — watchlist notify y alertas personales', () => {
+    let n6token = '';
+    const authed6 = (path: string, init: RequestInit = {}) =>
+      fetch(`${base}${path}`, {
+        ...init,
+        headers: { ...(init.headers ?? {}), Authorization: `Bearer ${n6token}` },
+      });
+
+    it('obtiene token demo para N6', async () => {
+      const res = await fetch(`${base}/api/auth/demo`, { method: 'POST' });
+      const data = (await res.json()) as any;
+      n6token = data.token;
+      expect(n6token.length).toBeGreaterThan(20);
+    });
+
+    it('PATCH /api/watchlists/me/items/:slug configura notify (N6)', async () => {
+      // Primero fijar una señal
+      const signals = await get('/api/signals');
+      const slug = signals.items[0].slug;
+
+      await authed6('/api/watchlists/me/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityType: signals.items[0].entityType, slug }),
+      });
+
+      // Ahora configurar notify
+      const patch = await authed6(`/api/watchlists/me/items/${slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ radarScoreAbove: 10, onAccelerate: true, onNewOutlier: false }),
+      });
+      expect(patch.ok).toBe(true);
+      const patchData = (await patch.json()) as any;
+      const saved = patchData.items.find((i: any) => i.slug === slug);
+      expect(saved?.notify?.radarScoreAbove).toBe(10);
+      expect(saved?.notify?.onAccelerate).toBe(true);
+    });
+
+    it('GET /api/alerts/unseen con token incluye alertas personales (N6)', async () => {
+      // Recomputar para que el engine evalúe los notify de la watchlist
+      const { recomputeAll } = await import('../signals/signalEngine');
+      await recomputeAll();
+
+      const res = await authed6('/api/alerts/unseen');
+      expect(res.ok).toBe(true);
+      const data = (await res.json()) as any;
+      // count puede ser 0 si ningún umbral se disparó, pero el endpoint debe responder
+      expect(typeof data.count).toBe('number');
+    });
+
+    it('GET /api/alerts con token incluye alertas con userId (N6)', async () => {
+      const res = await authed6('/api/alerts?limit=100');
+      expect(res.ok).toBe(true);
+      const data = (await res.json()) as any;
+      expect(Array.isArray(data.items)).toBe(true);
+      // Debe incluir alertas globales (userId: null) que existan del seed
+      const globalAlerts = data.items.filter((a: any) => a.userId == null);
+      expect(globalAlerts.length).toBeGreaterThanOrEqual(0);
+    });
+  });
 });

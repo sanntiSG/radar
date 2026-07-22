@@ -44,6 +44,35 @@ watchlistsRouter.post(
   })
 );
 
+// PATCH /api/watchlists/me/items/:slug — actualizar configuración de alertas de un pin
+watchlistsRouter.patch(
+  '/me/items/:slug',
+  authRequired,
+  asyncHandler(async (req, res) => {
+    const { radarScoreAbove, onAccelerate, onNewOutlier } = req.body as {
+      radarScoreAbove?: number | null;
+      onAccelerate?: boolean;
+      onNewOutlier?: boolean;
+    };
+
+    const list = await Watchlist.findOne({ userId: req.auth!.userId, name: 'Mis pines' });
+    if (!list) return res.status(404).json({ error: 'Watchlist no encontrada' });
+
+    const item = list.items.find((i) => i.slug === req.params.slug);
+    if (!item) return res.status(404).json({ error: 'Pin no encontrado' });
+
+    // Mutate the subdocument in place
+    const n = (item as any).notify ?? {};
+    if (radarScoreAbove !== undefined) n.radarScoreAbove = radarScoreAbove;
+    if (onAccelerate !== undefined) n.onAccelerate = Boolean(onAccelerate);
+    if (onNewOutlier !== undefined) n.onNewOutlier = Boolean(onNewOutlier);
+    (item as any).notify = n;
+
+    await list.save();
+    res.json({ items: list.items });
+  })
+);
+
 // DELETE /api/watchlists/me/items/:slug — quitar un pin
 watchlistsRouter.delete(
   '/me/items/:slug',

@@ -1,26 +1,44 @@
 import { Router } from 'express';
 import { Alert } from '../models';
+import { authOptional } from '../middlewares/auth';
 import { asyncHandler, paginate } from './helpers';
 
 export const alertsRouter = Router();
 
+/**
+ * Build a filter that returns:
+ *   - Global alerts (userId: null) always
+ *   - Personal alerts (userId: authUser) if authenticated
+ */
+function alertFilter(userId: string | null) {
+  if (userId) {
+    return { $or: [{ userId: null }, { userId }] };
+  }
+  return { userId: null };
+}
+
 alertsRouter.get(
   '/',
+  authOptional,
   asyncHandler(async (req, res) => {
+    const userId = req.auth?.userId ?? null;
     const { page, limit, skip } = paginate(req);
+    const filter = alertFilter(userId);
     const [items, total] = await Promise.all([
-      Alert.find().sort({ triggeredAt: -1 }).skip(skip).limit(limit),
-      Alert.countDocuments(),
+      Alert.find(filter).sort({ triggeredAt: -1 }).skip(skip).limit(limit),
+      Alert.countDocuments(filter),
     ]);
     res.json({ items, total, page, pages: Math.ceil(total / limit) });
   })
 );
 
-// GET /api/alerts/unseen — contador para el badge del nav
+// GET /api/alerts/unseen — badge count (global + personal when authenticated)
 alertsRouter.get(
   '/unseen',
-  asyncHandler(async (_req, res) => {
-    const count = await Alert.countDocuments({ seen: false });
+  authOptional,
+  asyncHandler(async (req, res) => {
+    const userId = req.auth?.userId ?? null;
+    const count = await Alert.countDocuments({ ...alertFilter(userId), seen: false });
     res.json({ count });
   })
 );

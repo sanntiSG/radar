@@ -25,6 +25,8 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<HistoryPoint[] | null>(null);
   const [pinned, setPinned] = useState<Signal[]>([]);
   const [pinnedSlugs, setPinnedSlugs] = useState<Set<string>>(new Set());
+  const [notifyOpen, setNotifyOpen] = useState<string | null>(null); // slug del pin con popover abierto
+  const [notifyConfigs, setNotifyConfigs] = useState<Record<string, { radarScoreAbove: number | null; onAccelerate: boolean; onNewOutlier: boolean }>>({});
   const [error, setError] = useState<string | null>(null);
 
   // Filtros por defecto del usuario
@@ -94,6 +96,16 @@ export default function DashboardPage() {
       const data = await authFetch('/api/watchlists/me');
       setPinned(data.signals);
       setPinnedSlugs(new Set(data.items.map((i: { slug: string }) => i.slug)));
+      // Sync notify configs from watchlist items
+      const configs: Record<string, { radarScoreAbove: number | null; onAccelerate: boolean; onNewOutlier: boolean }> = {};
+      for (const item of data.items as { slug: string; notify?: { radarScoreAbove?: number | null; onAccelerate?: boolean; onNewOutlier?: boolean } }[]) {
+        configs[item.slug] = {
+          radarScoreAbove: item.notify?.radarScoreAbove ?? null,
+          onAccelerate: item.notify?.onAccelerate ?? false,
+          onNewOutlier: item.notify?.onNewOutlier ?? false,
+        };
+      }
+      setNotifyConfigs(configs);
     } catch {
       /* pines no críticos */
     }
@@ -102,6 +114,18 @@ export default function DashboardPage() {
   useEffect(() => {
     loadPins();
   }, [loadPins]);
+
+  const saveNotify = useCallback(async (slug: string, patch: Partial<{ radarScoreAbove: number | null; onAccelerate: boolean; onNewOutlier: boolean }>) => {
+    setNotifyConfigs((prev) => ({ ...prev, [slug]: { ...prev[slug], ...patch } }));
+    try {
+      await authFetch(`/api/watchlists/me/items/${slug}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      });
+    } catch {
+      /* best-effort */
+    }
+  }, []);
 
   const togglePin = async (signal: Signal) => {
     if (!user) return;
@@ -172,19 +196,91 @@ export default function DashboardPage() {
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--border)] rounded-xl border border-line bg-elev/60">
-            {pinned.map((signal) => (
-              <li key={signal.slug}>
-                <button
-                  onClick={() => setSelected(signal)}
-                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors duration-150 hover:bg-elev"
-                >
-                  <Score value={signal.radarScore} />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{signal.name}</span>
-                  <GrowthPct value={signal.growthScore} />
-                  <StatusBadge status={signal.status} />
-                </button>
-              </li>
-            ))}
+            {pinned.map((signal) => {
+              const nc = notifyConfigs[signal.slug] ?? { radarScoreAbove: null, onAccelerate: false, onNewOutlier: false };
+              const hasNotify = nc.radarScoreAbove != null || nc.onAccelerate || nc.onNewOutlier;
+              const isOpen = notifyOpen === signal.slug;
+              return (
+                <li key={signal.slug} className="relative">
+                  <div className="flex w-full items-center gap-4 px-4 py-3">
+                    <button
+                      onClick={() => setSelected(signal)}
+                      className="flex min-w-0 flex-1 items-center gap-4 text-left transition-colors duration-150 hover:opacity-80"
+                    >
+                      <Score value={signal.radarScore} />
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{signal.name}</span>
+                      <GrowthPct value={signal.growthScore} />
+                      <StatusBadge status={signal.status} />
+                    </button>
+                    <button
+                      onClick={() => setNotifyOpen(isOpen ? null : signal.slug)}
+                      title="Configurar alertas de este pin"
+                      className={`pressable shrink-0 rounded-md px-1.5 py-1 text-sm transition-colors duration-150 ${
+                        hasNotify ? 'text-jade' : 'text-faint hover:text-dim'
+                      }`}
+                    >
+                      {hasNotify ? '🔔' : '🔕'}
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <div className="mx-4 mb-3 rounded-xl border border-line bg-bg p-4 text-sm">
+                      <p className="font-semibold text-dim">Alertas para {signal.name}</p>
+                      <div className="mt-3 space-y-3">
+                        {/* Radar Score threshold */}
+                        <div className="flex items-center justify-between gap-3">
+                          <label className="text-xs text-faint">Avisar si Radar Score ≥</label>
+                          <input
+                            type="number"
+                            min={0} max={100} step={5}
+                            className="w-20 rounded-lg border border-line bg-elev px-2 py-1 text-right font-mono text-sm text-ink focus:border-jade focus:outline-none"
+                            value={nc.radarScoreAbove ?? ''}
+                            placeholder="—"
+                            onChange={(e) => {
+                              const v = e.target.value === '' ? null : Number(e.target.value);
+                              saveNotify(signal.slug, { radarScoreAbove: v });
+                            }}
+                          />
+                        </div>
+                        {/* Accelerating */}
+                        <label className="flex cursor-pointer items-center justify-between gap-3">
+                          <span className="text-xs text-faint">Avisar si acelera 3+ períodos</span>
+                          <button
+                            role="switch"
+                            aria-checked={nc.onAccelerate}
+                            onClick={() => saveNotify(signal.slug, { onAccelerate: !nc.onAccelerate })}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
+                              nc.onAccelerate ? 'bg-jade' : 'bg-soft'
+                            }`}
+                          >
+                            <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-bg shadow transition-transform duration-150 ${nc.onAccelerate ? 'translate-x-4' : ''}`} />
+                          </button>
+                        </label>
+                        {/* Outlier */}
+                        <label className="flex cursor-pointer items-center justify-between gap-3">
+                          <span className="text-xs text-faint">Avisar si hay anomalía (outlier)</span>
+                          <button
+                            role="switch"
+                            aria-checked={nc.onNewOutlier}
+                            onClick={() => saveNotify(signal.slug, { onNewOutlier: !nc.onNewOutlier })}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
+                              nc.onNewOutlier ? 'bg-jade' : 'bg-soft'
+                            }`}
+                          >
+                            <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-bg shadow transition-transform duration-150 ${nc.onNewOutlier ? 'translate-x-4' : ''}`} />
+                          </button>
+                        </label>
+                      </div>
+                      <button
+                        onClick={() => setNotifyOpen(null)}
+                        className="pressable mt-3 w-full rounded-lg border border-line px-3 py-1.5 text-xs text-faint transition-colors duration-150 hover:text-ink"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
