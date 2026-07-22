@@ -437,4 +437,62 @@ describe('Fase 2 end-to-end', () => {
       expect(globalAlerts.length).toBeGreaterThanOrEqual(0);
     });
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // N7 — Gamificación (logros)
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('N7 — logros de gamificación', () => {
+    let n7token = '';
+    const authed7 = (path: string, init: RequestInit = {}) =>
+      fetch(`${base}${path}`, {
+        ...init,
+        headers: { ...(init.headers ?? {}), Authorization: `Bearer ${n7token}` },
+      });
+
+    it('obtiene token demo para N7', async () => {
+      const res = await fetch(`${base}/api/auth/demo`, { method: 'POST' });
+      const data = (await res.json()) as any;
+      n7token = data.token;
+      expect(n7token.length).toBeGreaterThan(20);
+    });
+
+    it('GET /api/achievements devuelve lista de logros (N7)', async () => {
+      const res = await authed7('/api/achievements');
+      expect(res.ok).toBe(true);
+      const data = (await res.json()) as any;
+      expect(Array.isArray(data.achievements)).toBe(true);
+      expect(data.achievements.length).toBeGreaterThan(0);
+      expect(typeof data.total).toBe('number');
+      expect(typeof data.unlocked).toBe('number');
+      const first = data.achievements[0];
+      expect(typeof first.key).toBe('string');
+      expect(typeof first.title).toBe('string');
+      expect(typeof first.unlocked).toBe('boolean');
+      expect(typeof first.progress).toBe('number');
+    });
+
+    it('primer_pin se desbloquea al tener al menos 1 pin (N7)', async () => {
+      // Fijar una señal (idempotente — si ya existe no genera error por $addToSet)
+      const signals = await get('/api/signals');
+      const { slug, entityType } = signals.items[0];
+      await authed7('/api/watchlists/me/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityType, slug }),
+      });
+
+      const res = await authed7('/api/achievements');
+      const data = (await res.json()) as any;
+      const primerPin = data.achievements.find((a: any) => a.key === 'primer_pin');
+      expect(primerPin).toBeDefined();
+      expect(primerPin.unlocked).toBe(true);
+      expect(primerPin.progress).toBe(100);
+    });
+
+    it('GET /api/achievements rechaza sin token (N7)', async () => {
+      const res = await fetch(`${base}/api/achievements`);
+      expect(res.status).toBe(401);
+    });
+  });
 });

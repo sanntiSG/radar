@@ -8,6 +8,7 @@ import {
   type Preferences,
   type SectionPref,
 } from '@/lib/auth';
+import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
 
 const SECTION_LABELS: Record<SectionPref['id'], string> = {
   stats: 'Métricas generales',
@@ -401,6 +402,9 @@ export default function ProfilePage() {
           )}
         </div>
       </section>
+
+      {/* Logros */}
+      <AchievementStrip className="pt-2" />
     </div>
   );
 }

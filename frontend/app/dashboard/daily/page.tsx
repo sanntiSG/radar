@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { DailyResponse, Signal } from '@/lib/types';
 import { Score, Skeleton, Sparkline, StatusBadge, GrowthPct } from '@/components/dashboard/ui';
+import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
 
 function SignalRow({ signal }: { signal: Signal }) {
   return (
@@ -194,6 +195,9 @@ export default function DailyPage() {
               </div>
             </section>
           )}
+
+          {/* Logros */}
+          <AchievementStrip />
 
           {/* CTA */}
           <section className="rounded-xl border border-line bg-elev/40 p-5 text-center">

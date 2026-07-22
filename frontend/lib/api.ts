@@ -1,4 +1,5 @@
 import type {
+  AchievementsResponse,
   DailyResponse,
   Hashtag,
   HistoryPoint,

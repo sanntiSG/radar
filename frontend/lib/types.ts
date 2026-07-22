@@ -144,6 +144,21 @@ export interface Opportunity {
   sources: string[];
 }
 
+export interface Achievement {
+  key: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  progress: number; // 0-100
+  icon: string;
+}
+
+export interface AchievementsResponse {
+  achievements: Achievement[];
+  unlocked: number;
+  total: number;
+}
+
 export interface SourceInfo {
   name: string;
   label: string;
