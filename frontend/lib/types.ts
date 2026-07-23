@@ -186,3 +186,51 @@ export interface SourcesResponse {
     cronEnabled: boolean;
   };
 }
+
+export interface EvidenceTimelinePoint {
+  date: string;
+  value: number;
+  engagement: number;
+}
+
+export interface ScorePoint {
+  index: number;
+  date: string;
+  score: number;
+}
+
+export type PhaseKind = 'detected' | 'takeoff' | 'peak' | 'now';
+
+export interface Phase {
+  index: number;
+  date: string;
+  kind: PhaseKind;
+  label: string;
+}
+
+export interface DayDelta {
+  mentionsToday: number;
+  mentionsYesterday: number;
+  deltaPct: number;
+  scoreToday: number;
+  scoreYesterday: number;
+  scoreDelta: number;
+}
+
+export interface EvidenceSource {
+  id: string;
+  label: string;
+}
+
+export interface EvidenceResponse {
+  signal: Signal;
+  timeline: EvidenceTimelinePoint[];
+  scoreTimeline: ScorePoint[];
+  phases: Phase[];
+  delta: DayDelta | null;
+  factors: SignalFactor[];
+  sources: EvidenceSource[];
+  sourceAgreement: { count: number; sources: string[] };
+  firstDetectedAt: string;
+  daysSinceDetection: number;
+}

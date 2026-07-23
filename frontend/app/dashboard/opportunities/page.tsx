@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { Opportunity } from '@/lib/types';
@@ -77,18 +78,26 @@ export default function OpportunitiesPage() {
                   <Sparkline data={item.sparkline} />
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-4 border-t border-line pt-3">
-                  {[
-                    ['Velocidad', item.metrics.velocity.toFixed(1)],
-                    ['Aceleración', item.metrics.acceleration.toFixed(1)],
-                    ['Frecuencia', item.metrics.frequency],
-                    ['Engagement', item.metrics.engagement],
-                  ].map(([label, value]) => (
-                    <div key={String(label)} className="text-xs">
-                      <span className="text-faint">{label}</span>
-                      <span className="ml-1.5 font-mono tabular-nums text-dim">{value}</span>
-                    </div>
-                  ))}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-3">
+                  <div className="flex flex-wrap gap-4">
+                    {[
+                      ['Velocidad', item.metrics.velocity.toFixed(1)],
+                      ['Aceleración', item.metrics.acceleration.toFixed(1)],
+                      ['Frecuencia', item.metrics.frequency],
+                      ['Engagement', item.metrics.engagement],
+                    ].map(([label, value]) => (
+                      <div key={String(label)} className="text-xs">
+                        <span className="text-faint">{label}</span>
+                        <span className="ml-1.5 font-mono tabular-nums text-dim">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    href={`/dashboard/signal/${item.slug}`}
+                    className="shrink-0 text-xs font-medium text-jade transition-colors duration-150 hover:text-ink"
+                  >
+                    Ver evidencia →
+                  </Link>
                 </div>
               </li>
             ))}

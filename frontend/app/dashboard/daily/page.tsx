@@ -10,7 +10,10 @@ import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
 
 function SignalRow({ signal }: { signal: Signal }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-soft/50 px-3 py-2.5">
+    <Link
+      href={`/dashboard/signal/${signal.slug}`}
+      className="flex items-center gap-3 rounded-lg bg-soft/50 px-3 py-2.5 transition-colors duration-150 hover:bg-soft"
+    >
       <Score value={signal.radarScore} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{signal.name}</p>
@@ -19,7 +22,7 @@ function SignalRow({ signal }: { signal: Signal }) {
       <Sparkline data={signal.sparkline} />
       <GrowthPct value={signal.growthScore} />
       <StatusBadge status={signal.status} />
-    </div>
+    </Link>
   );
 }
 

@@ -1,6 +1,7 @@
 import type {
   AchievementsResponse,
   DailyResponse,
+  EvidenceResponse,
   Hashtag,
   HistoryPoint,
   Insight,
@@ -24,6 +25,7 @@ async function get<T>(path: string): Promise<T> {
 export const api = {
   signals: (params = '') => get<Paged<Signal>>(`/api/signals?limit=50${params}`),
   signal: (slug: string) => get<Signal>(`/api/signals/${slug}`),
+  evidence: (slug: string) => get<EvidenceResponse>(`/api/signals/${slug}/evidence`),
   stats: () => get<Stats>('/api/signals/stats'),
   trends: (params = '') => get<Paged<Trend>>(`/api/trends?limit=50${params}`),
   hashtags: (params = '') => get<Paged<Hashtag>>(`/api/hashtags?limit=50${params}`),

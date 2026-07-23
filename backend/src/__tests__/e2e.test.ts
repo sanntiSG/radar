@@ -496,3 +496,61 @@ describe('Fase 2 end-to-end', () => {
     });
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N8 — Centro de Evidencias
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N8 — Centro de Evidencias', () => {
+  it('GET /api/signals/:slug/evidence devuelve timeline, fases y factores', async () => {
+    const data = await get('/api/signals/mini-impresora-portatil/evidence');
+
+    expect(data.signal.slug).toBe('mini-impresora-portatil');
+    expect(Array.isArray(data.timeline)).toBe(true);
+    expect(data.timeline.length).toBe(14);
+    expect(data.timeline[0].value).toBeGreaterThan(0);
+
+    // scoreTimeline arranca en índice 2 (necesita al menos 3 puntos)
+    expect(Array.isArray(data.scoreTimeline)).toBe(true);
+    expect(data.scoreTimeline.length).toBe(data.timeline.length - 2);
+    for (const p of data.scoreTimeline) {
+      expect(p.score).toBeGreaterThanOrEqual(0);
+      expect(p.score).toBeLessThanOrEqual(100);
+    }
+
+    // Fases: siempre incluye detección (índice 0) y ahora (último índice)
+    expect(Array.isArray(data.phases)).toBe(true);
+    const kinds = data.phases.map((p: any) => p.kind);
+    expect(kinds).toContain('detected');
+    expect(kinds).toContain('now');
+    expect(data.phases[0].index).toBe(0);
+    expect(data.phases[data.phases.length - 1].index).toBe(data.timeline.length - 1);
+
+    // Delta vs ayer
+    expect(data.delta).not.toBeNull();
+    expect(typeof data.delta.deltaPct).toBe('number');
+    expect(typeof data.delta.scoreDelta).toBe('number');
+
+    // Factores y fuentes
+    expect(data.factors.length).toBeGreaterThanOrEqual(5);
+    expect(Array.isArray(data.sources)).toBe(true);
+    expect(data.sourceAgreement.count).toBe(data.sources.length);
+
+    // Detección y días transcurridos
+    expect(typeof data.firstDetectedAt).toBe('string');
+    expect(data.daysSinceDetection).toBeGreaterThanOrEqual(0);
+  });
+
+  it('GET /api/signals/:slug/evidence responde 404 para slug inexistente', async () => {
+    const res = await fetch(`${base}/api/signals/no-existe-esta-senal/evidence`);
+    expect(res.status).toBe(404);
+  });
+
+  it('evidence de una tendencia usa el campo interest, no mentions', async () => {
+    const signals = await get('/api/trends?limit=1');
+    const slug = signals.items[0].slug;
+    const data = await get(`/api/signals/${slug}/evidence`);
+    expect(data.signal.entityType).toBe('trend');
+    expect(data.timeline.length).toBeGreaterThan(0);
+  });
+});

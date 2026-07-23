@@ -15,6 +15,7 @@ import {
   StatusBadge,
 } from '@/components/dashboard/ui';
 import { SignalChart } from '@/components/dashboard/SignalChart';
+import { FactorBreakdown } from '@/components/dashboard/FactorBreakdown';
 
 export default function DashboardPage() {
   const { user, preferences, loading: authLoading } = useAuth();
@@ -496,38 +497,13 @@ export default function DashboardPage() {
               {/* Por qué esta señal — desglose de factores */}
               {selected.factors && selected.factors.length > 0 && (
                 <div className="mt-5 border-t border-line pt-4">
-                  <p className="mb-3 text-xs font-medium text-faint">Por qué existe esta señal</p>
-                  <ul className="space-y-2.5">
-                    {selected.factors.map((factor, i) => (
-                      <li key={factor.key}>
-                        <div className="mb-1 flex items-baseline justify-between gap-2">
-                          <span className="text-xs font-medium text-ink">{factor.label}</span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {factor.weight !== null && (
-                              <span className="rounded bg-soft px-1 py-0.5 font-mono text-[10px] text-faint">
-                                {factor.weight}%
-                              </span>
-                            )}
-                            <span className="font-mono text-xs tabular-nums text-dim">
-                              {factor.contribution}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-soft">
-                          <div
-                            className="h-full rounded-full bg-jade transition-all"
-                            style={{
-                              width: `${factor.contribution}%`,
-                              transitionDelay: `${i * 60}ms`,
-                              transitionDuration: '600ms',
-                              transitionTimingFunction: 'cubic-bezier(0.23,1,0.32,1)',
-                            }}
-                          />
-                        </div>
-                        <p className="mt-0.5 text-[11px] leading-relaxed text-faint">{factor.detail}</p>
-                      </li>
-                    ))}
-                  </ul>
+                  <FactorBreakdown factors={selected.factors} />
+                  <Link
+                    href={`/dashboard/signal/${selected.slug}`}
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-jade transition-colors duration-150 hover:text-ink"
+                  >
+                    Ver evidencia completa →
+                  </Link>
                 </div>
               )}
 
