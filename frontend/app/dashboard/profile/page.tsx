@@ -9,6 +9,7 @@ import {
   type SectionPref,
 } from '@/lib/auth';
 import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
+import { LevelBadge } from '@/components/dashboard/LevelBadge';
 import { EXPERIENCE_LEVELS, GOALS, LANGUAGES, MARKETPLACES, MAX_GOALS } from '@/lib/experience';
 
 const SECTION_LABELS: Record<SectionPref['id'], string> = {
@@ -141,7 +142,10 @@ export default function ProfilePage() {
             </span>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-lg font-bold">{user.name || 'Mi cuenta'}</p>
+            <p className="flex items-center gap-2">
+              <span className="truncate font-display text-lg font-bold">{user.name || 'Mi cuenta'}</span>
+              <LevelBadge />
+            </p>
             <p className="truncate text-sm text-faint">
               {user.email} · {user.plan === 'pro' ? 'Plan Pro' : 'Plan Free'}
             </p>

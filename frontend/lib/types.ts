@@ -174,10 +174,19 @@ export interface Achievement {
   icon: string;
 }
 
+export interface RadarLevel {
+  key: 'explorador' | 'analista' | 'experto';
+  title: string;
+  points: number;
+  nextAt: number | null;
+  progress: number; // 0-100 hacia el siguiente nivel (100 si es el nivel máximo)
+}
+
 export interface AchievementsResponse {
   achievements: Achievement[];
   unlocked: number;
   total: number;
+  level: RadarLevel;
 }
 
 export interface SourceInfo {

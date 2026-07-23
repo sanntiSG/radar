@@ -50,6 +50,27 @@ Fuentes → Adaptadores → Cache inteligente → MongoDB → Snapshots históri
 El motor es **matemático puro** (sin IA de pago): growth velocity, aceleración,
 Z-Score/IQR, SMA/EMA, momentum, regresión lineal y suavizado exponencial.
 
+## Funcionalidades
+
+**Retención (Fase 3):** explicación del "por qué" de cada señal (factores con
+contribución normalizada), Radar Personal (país/nichos/plataformas/keywords),
+descubrimiento de oportunidades tempranas, Asistente en lenguaje natural sobre
+datos propios, Radar Diario con racha de actividad, watchlists inteligentes
+con alertas configurables, logros dinámicos.
+
+**Confianza (Fase 4):** Centro de Evidencias por señal (timeline anotado desde
+la detección, Radar Score explicado con cambio vs. ayer, validación por
+fuentes), Índice de Precisión (backtest honesto sobre el histórico propio, con
+disclaimer explícito), Asistente v2 (rankings por categoría, comparaciones
+directas, ventana temporal y geo transparentes), Radar Personal enriquecido
+(nivel de experiencia, objetivos, marketplaces — con adaptación real de copy),
+Radar Diario v2 (cambios vs. ayer, filtros por nicho/plataforma/país,
+hashtags y productos emergentes), niveles de gamificación (Explorador →
+Analista → Experto) sobre actividad real.
+
+Todo funciona sin IA de pago ni servicios con límite de tokens — el núcleo es
+matemático y determinista sobre el histórico propio de Radar.
+
 ## Tests
 
 ```bash

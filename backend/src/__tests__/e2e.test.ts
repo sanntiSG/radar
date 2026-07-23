@@ -771,3 +771,63 @@ describe('N12 — Radar Diario v2', () => {
     expect(data.scope.platform).toBe('reddit');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N13 — Gamificación v2 (niveles)
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N13 — Gamificación v2 (niveles)', () => {
+  let n13token = '';
+  const authed13 = (path: string, init: RequestInit = {}) =>
+    fetch(`${base}${path}`, {
+      ...init,
+      headers: { ...(init.headers ?? {}), Authorization: `Bearer ${n13token}` },
+    });
+
+  it('obtiene token demo para N13', async () => {
+    const res = await fetch(`${base}/api/auth/demo`, { method: 'POST' });
+    const data = (await res.json()) as any;
+    n13token = data.token;
+    expect(n13token.length).toBeGreaterThan(20);
+  });
+
+  it('GET /api/achievements incluye nivel con puntos y progreso válidos', async () => {
+    const res = await authed13('/api/achievements');
+    expect(res.ok).toBe(true);
+    const data = (await res.json()) as any;
+    expect(data.total).toBe(9);
+    expect(data.level).toBeDefined();
+    expect(['explorador', 'analista', 'experto']).toContain(data.level.key);
+    expect(typeof data.level.points).toBe('number');
+    expect(data.level.points).toBeGreaterThanOrEqual(0);
+    expect(data.level.progress).toBeGreaterThanOrEqual(0);
+    expect(data.level.progress).toBeLessThanOrEqual(100);
+  });
+
+  it('explorador_nichos se desbloquea al pinnear 3+ categorías distintas (cruce real con Signal)', async () => {
+    const pins = [
+      { entityType: 'product', slug: 'mini-impresora-portatil' }, // Gadgets
+      { entityType: 'product', slug: 'organizador-magnetico' }, // Hogar
+      { entityType: 'product', slug: 'botella-termica-inteligente' }, // Cocina
+    ];
+    for (const pin of pins) {
+      await authed13('/api/watchlists/me/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pin),
+      });
+    }
+
+    const res = await authed13('/api/achievements');
+    const data = (await res.json()) as any;
+    const nichos = data.achievements.find((a: any) => a.key === 'explorador_nichos');
+    expect(nichos).toBeDefined();
+    expect(nichos.unlocked).toBe(true);
+    expect(nichos.progress).toBe(100);
+  });
+
+  it('GET /api/achievements rechaza sin token (N13)', async () => {
+    const res = await fetch(`${base}/api/achievements`);
+    expect(res.status).toBe(401);
+  });
+});

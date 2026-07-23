@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { authFetch } from '@/lib/auth';
-import type { Achievement } from '@/lib/types';
+import type { Achievement, RadarLevel } from '@/lib/types';
 
 interface Props {
   className?: string;
@@ -10,12 +10,14 @@ interface Props {
 
 export function AchievementStrip({ className = '' }: Props) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [level, setLevel] = useState<RadarLevel | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     authFetch('/api/achievements')
       .then((data: any) => {
         setAchievements(data.achievements ?? []);
+        setLevel(data.level ?? null);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -28,12 +30,32 @@ export function AchievementStrip({ className = '' }: Props) {
 
   return (
     <div className={className}>
-      <h3 className="font-display text-sm font-bold text-dim">
-        Logros{' '}
-        <span className="ml-1 font-body text-xs font-normal text-faint">
-          {unlocked.length}/{achievements.length}
-        </span>
-      </h3>
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="font-display text-sm font-bold text-dim">
+          Logros{' '}
+          <span className="ml-1 font-body text-xs font-normal text-faint">
+            {unlocked.length}/{achievements.length}
+          </span>
+        </h3>
+        {level && (
+          <span className="text-xs text-faint">
+            Nivel <span className="font-medium text-jade">{level.title}</span> · {level.points} pts
+          </span>
+        )}
+      </div>
+      {level && level.nextAt !== null && (
+        <div className="mt-2">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-soft">
+            <div
+              className="h-full rounded-full bg-jade/60 transition-all duration-500"
+              style={{ width: `${level.progress}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-faint">
+            {level.nextAt - level.points} pts para el siguiente nivel
+          </p>
+        </div>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {[...unlocked, ...locked].map((a) => (
           <div
