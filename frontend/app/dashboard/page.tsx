@@ -16,6 +16,7 @@ import {
 } from '@/components/dashboard/ui';
 import { SignalChart } from '@/components/dashboard/SignalChart';
 import { FactorBreakdown } from '@/components/dashboard/FactorBreakdown';
+import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
 
 export default function DashboardPage() {
   const { user, preferences, loading: authLoading } = useAuth();
@@ -402,6 +403,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <AccuracyBadge />
           <a
             href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/export/signals.csv`}
             download

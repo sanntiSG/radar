@@ -222,6 +222,32 @@ export interface EvidenceSource {
   label: string;
 }
 
+export interface AccuracySample {
+  slug: string;
+  precisionPct: number;
+  predictions: number;
+}
+
+export interface AccuracyOverall {
+  signalsAnalyzed: number;
+  predictionsEvaluated: number;
+  continuedGrowingPct: number;
+  avgAnticipationDays: number | null;
+  samplePredictions: AccuracySample[];
+}
+
+export interface AccuracyBreakdown {
+  precisionPct: number;
+  count: number;
+}
+
+export interface AccuracyResponse {
+  overall: AccuracyOverall;
+  byCategory: (AccuracyBreakdown & { category: string })[];
+  bySource: (AccuracyBreakdown & { source: string })[];
+  disclaimer: string;
+}
+
 export interface EvidenceResponse {
   signal: Signal;
   timeline: EvidenceTimelinePoint[];

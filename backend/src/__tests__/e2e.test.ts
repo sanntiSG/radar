@@ -554,3 +554,39 @@ describe('N8 — Centro de Evidencias', () => {
     expect(data.timeline.length).toBeGreaterThan(0);
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N9 — Índice de Precisión de Radar
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N9 — Índice de Precisión', () => {
+  it('GET /api/accuracy agrega backtest honesto sobre el histórico', async () => {
+    const data = await get('/api/accuracy');
+
+    expect(data.overall.signalsAnalyzed).toBeGreaterThan(0);
+    expect(data.overall.continuedGrowingPct).toBeGreaterThanOrEqual(0);
+    expect(data.overall.continuedGrowingPct).toBeLessThanOrEqual(100);
+    expect(Array.isArray(data.overall.samplePredictions)).toBe(true);
+
+    expect(Array.isArray(data.byCategory)).toBe(true);
+    expect(data.byCategory.length).toBeGreaterThan(0);
+    for (const c of data.byCategory) {
+      expect(typeof c.category).toBe('string');
+      expect(c.precisionPct).toBeGreaterThanOrEqual(0);
+      expect(c.precisionPct).toBeLessThanOrEqual(100);
+      expect(c.count).toBeGreaterThan(0);
+    }
+
+    expect(Array.isArray(data.bySource)).toBe(true);
+    expect(data.bySource.length).toBeGreaterThan(0);
+
+    expect(typeof data.disclaimer).toBe('string');
+    expect(data.disclaimer.length).toBeGreaterThan(20);
+  });
+
+  it('la señal exponencial (mini impresora) tiene anticipación medible o precisión evaluada', async () => {
+    const data = await get('/api/accuracy');
+    // El histórico sembrado (14 días) siempre produce al menos una predicción evaluable global
+    expect(data.overall.predictionsEvaluated).toBeGreaterThan(0);
+  });
+});

@@ -8,3 +8,4 @@ export * from './confidence';
 export * from './radarScore';
 export * from './explain';
 export * from './evidence';
+export * from './accuracy';

@@ -16,6 +16,7 @@ const NAV = [
   { href: '/dashboard/hashtags', label: 'Hashtags' },
   { href: '/dashboard/products', label: 'Productos' },
   { href: '/dashboard/alerts', label: 'Alertas' },
+  { href: '/dashboard/transparencia', label: 'Transparencia' },
   { href: '/dashboard/sources', label: 'Fuentes' },
 ];
 

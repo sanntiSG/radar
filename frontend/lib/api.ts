@@ -1,4 +1,5 @@
 import type {
+  AccuracyResponse,
   AchievementsResponse,
   DailyResponse,
   EvidenceResponse,
@@ -36,4 +37,5 @@ export const api = {
   sources: () => get<SourcesResponse>('/api/sources'),
   opportunities: () => get<{ items: Opportunity[]; total: number }>('/api/opportunities'),
   daily: () => get<DailyResponse>('/api/daily'),
+  accuracy: () => get<AccuracyResponse>('/api/accuracy'),
 };

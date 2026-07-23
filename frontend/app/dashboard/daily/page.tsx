@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import type { DailyResponse, Signal } from '@/lib/types';
 import { Score, Skeleton, Sparkline, StatusBadge, GrowthPct } from '@/components/dashboard/ui';
 import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
+import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
 
 function SignalRow({ signal }: { signal: Signal }) {
   return (
@@ -66,6 +67,9 @@ export default function DailyPage() {
             <p className="mt-1 text-sm text-faint">
               Lo más relevante del mercado detectado hoy.
             </p>
+            <div className="mt-3">
+              <AccuracyBadge />
+            </div>
           </div>
           {data && data.streak > 0 && (
             <div className="flex flex-col items-center rounded-xl border border-line bg-elev px-4 py-3 text-center">
