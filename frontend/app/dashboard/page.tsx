@@ -17,6 +17,7 @@ import {
 import { SignalChart } from '@/components/dashboard/SignalChart';
 import { FactorBreakdown } from '@/components/dashboard/FactorBreakdown';
 import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
+import { dashboardSubtitle, profileSummary } from '@/lib/experience';
 
 export default function DashboardPage() {
   const { user, preferences, loading: authLoading } = useAuth();
@@ -398,9 +399,10 @@ export default function DashboardPage() {
           <h1 className="font-display text-2xl font-bold tracking-tight">
             {user ? `Tu radar, ${(user.name || 'explorador').split(' ')[0]}` : 'Señales detectadas'}
           </h1>
-          <p className="mt-1 text-sm text-dim">
-            Lo que el mercado murmura, ordenado a tu manera.
-          </p>
+          <p className="mt-1 text-sm text-dim">{dashboardSubtitle(preferences.experienceLevel)}</p>
+          {user && profileSummary(preferences) && (
+            <p className="mt-1 text-xs text-faint">{profileSummary(preferences)}</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <AccuracyBadge />

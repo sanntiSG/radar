@@ -36,6 +36,12 @@ export interface Preferences {
   niches: string[];
   platforms: string[];
   keywords: string[];
+  // Radar Personal enriquecido (N11)
+  experienceLevel: '' | 'principiante' | 'vendedor' | 'agencia' | 'empresa';
+  goals: string[];
+  marketplaces: string[];
+  language: 'es' | 'en' | 'pt';
+  region: string;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -53,6 +59,11 @@ export const DEFAULT_PREFERENCES: Preferences = {
   niches: [],
   platforms: [],
   keywords: [],
+  experienceLevel: '',
+  goals: [],
+  marketplaces: [],
+  language: 'es',
+  region: '',
 };
 
 interface AuthContextValue {

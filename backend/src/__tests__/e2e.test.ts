@@ -658,3 +658,68 @@ describe('N10 — Radar Assistant v2', () => {
     expect(data.answer.toLowerCase()).toContain('recencia');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N11 — Radar Personal enriquecido
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N11 — Radar Personal enriquecido', () => {
+  let n11token = '';
+  const authed11 = (path: string, init: RequestInit = {}) =>
+    fetch(`${base}${path}`, {
+      ...init,
+      headers: { ...(init.headers ?? {}), Authorization: `Bearer ${n11token}` },
+    });
+
+  it('obtiene token demo para N11', async () => {
+    const res = await fetch(`${base}/api/auth/demo`, { method: 'POST' });
+    const data = (await res.json()) as any;
+    n11token = data.token;
+    expect(n11token.length).toBeGreaterThan(20);
+  });
+
+  it('GET /api/meta incluye experienceLevels, goals, marketplaces e idiomas', async () => {
+    const meta = await get('/api/meta');
+    expect(meta.experienceLevels.length).toBe(4);
+    expect(meta.goals.length).toBeGreaterThan(0);
+    expect(meta.marketplaces.length).toBeGreaterThan(0);
+    expect(meta.languages.length).toBe(3);
+  });
+
+  it('PUT /api/me persiste experienceLevel, goals, marketplaces, language y region', async () => {
+    const res = await authed11('/api/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        preferences: {
+          experienceLevel: 'agencia',
+          goals: ['seguir_competencia', 'ahorrar_tiempo', 'validar_ideas', 'detectar_nichos', 'encontrar_productos'],
+          marketplaces: ['shopify', 'amazon', 'invalido'],
+          language: 'en',
+          region: 'Buenos Aires',
+        },
+      }),
+    });
+    expect(res.ok).toBe(true);
+    const data = (await res.json()) as any;
+    expect(data.preferences.experienceLevel).toBe('agencia');
+    // Goals se cortan a 4 aunque se hayan enviado 5
+    expect(data.preferences.goals.length).toBe(4);
+    // Marketplace inválido se descarta
+    expect(data.preferences.marketplaces).toEqual(['shopify', 'amazon']);
+    expect(data.preferences.language).toBe('en');
+    expect(data.preferences.region).toBe('Buenos Aires');
+  });
+
+  it('PUT /api/me ignora experienceLevel y language inválidos', async () => {
+    await authed11('/api/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferences: { experienceLevel: 'ninja', language: 'fr' } }),
+    });
+    const me = await ((await authed11('/api/auth/me')).json() as Promise<any>);
+    // Se conservan los valores previos válidos, no los inválidos
+    expect(me.preferences.experienceLevel).toBe('agencia');
+    expect(me.preferences.language).toBe('en');
+  });
+});

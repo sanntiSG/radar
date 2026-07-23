@@ -4,6 +4,29 @@ export const ACCENTS = ['jade', 'amber', 'azure', 'violet'] as const;
 export const SECTION_IDS = ['stats', 'feed', 'insights', 'watchlist'] as const;
 export const SOURCE_IDS = ['reddit', 'google-trends', 'rss'] as const;
 
+// Radar Personal enriquecido (N11)
+export const EXPERIENCE_LEVELS = ['principiante', 'vendedor', 'agencia', 'empresa'] as const;
+export const LANGUAGES = ['es', 'en', 'pt'] as const;
+
+export const GOALS: { id: string; label: string }[] = [
+  { id: 'encontrar_productos', label: 'Encontrar productos con potencial temprano' },
+  { id: 'seguir_competencia', label: 'Seguir a la competencia y sus anuncios' },
+  { id: 'validar_ideas', label: 'Validar ideas antes de invertir' },
+  { id: 'ahorrar_tiempo', label: 'Ahorrar tiempo de investigación manual' },
+  { id: 'detectar_nichos', label: 'Detectar nichos en expansión' },
+  { id: 'escalar_negocio', label: 'Escalar un negocio ya existente' },
+];
+
+export const MARKETPLACES: { id: string; label: string }[] = [
+  { id: 'shopify', label: 'Shopify' },
+  { id: 'mercadolibre', label: 'MercadoLibre' },
+  { id: 'amazon', label: 'Amazon' },
+  { id: 'tiktok_shop', label: 'TikTok Shop' },
+  { id: 'etsy', label: 'Etsy' },
+  { id: 'woocommerce', label: 'WooCommerce' },
+  { id: 'otro', label: 'Otro' },
+];
+
 export const COUNTRIES: { code: string; label: string }[] = [
   { code: 'global', label: 'Global' },
   { code: 'AR', label: 'Argentina' },
@@ -43,6 +66,12 @@ const preferencesSchema = new Schema(
     niches: { type: [String], default: [] },
     platforms: { type: [String], default: [] },
     keywords: { type: [String], default: [] },
+    // Radar Personal enriquecido (N11)
+    experienceLevel: { type: String, enum: [...EXPERIENCE_LEVELS, ''], default: '' },
+    goals: { type: [String], default: [] },
+    marketplaces: { type: [String], default: [] },
+    language: { type: String, enum: LANGUAGES, default: 'es' },
+    region: { type: String, default: '' },
   },
   { _id: false }
 );

@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { authRequired } from '../middlewares/auth';
 import { User } from '../models';
-import { ACCENTS, COUNTRIES, SECTION_IDS, SOURCE_IDS } from '../models/User';
+import {
+  ACCENTS,
+  COUNTRIES,
+  EXPERIENCE_LEVELS,
+  GOALS,
+  LANGUAGES,
+  MARKETPLACES,
+  SECTION_IDS,
+  SOURCE_IDS,
+} from '../models/User';
 import { CATEGORIES } from '../services/taxonomy';
 import { asyncHandler } from './helpers';
 
@@ -43,6 +52,11 @@ meRouter.put(
         niches?: string[];
         platforms?: string[];
         keywords?: string[];
+        experienceLevel?: string;
+        goals?: string[];
+        marketplaces?: string[];
+        language?: string;
+        region?: string;
       };
     };
 
@@ -97,6 +111,33 @@ meRouter.put(
           .filter(Boolean)
           .slice(0, 12);
         $set['preferences.keywords'] = cleanKeywords;
+      }
+
+      // Radar Personal enriquecido (N11)
+      if (
+        typeof preferences.experienceLevel === 'string' &&
+        (preferences.experienceLevel === '' ||
+          (EXPERIENCE_LEVELS as readonly string[]).includes(preferences.experienceLevel))
+      ) {
+        $set['preferences.experienceLevel'] = preferences.experienceLevel;
+      }
+      if (Array.isArray(preferences.goals)) {
+        const validGoalIds = GOALS.map((g) => g.id);
+        const validGoals = (preferences.goals as string[]).filter((g) => validGoalIds.includes(g));
+        $set['preferences.goals'] = validGoals.slice(0, 4);
+      }
+      if (Array.isArray(preferences.marketplaces)) {
+        const validMarketplaceIds = MARKETPLACES.map((m) => m.id);
+        const validMarketplaces = (preferences.marketplaces as string[]).filter((m) =>
+          validMarketplaceIds.includes(m)
+        );
+        $set['preferences.marketplaces'] = validMarketplaces;
+      }
+      if (typeof preferences.language === 'string' && (LANGUAGES as readonly string[]).includes(preferences.language)) {
+        $set['preferences.language'] = preferences.language;
+      }
+      if (typeof preferences.region === 'string') {
+        $set['preferences.region'] = preferences.region.trim().slice(0, 40);
       }
     }
 

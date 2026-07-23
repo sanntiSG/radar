@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { AssistantResponse, Signal } from '@/lib/types';
 import { Score, Sparkline, StatusBadge } from '@/components/dashboard/ui';
+import { useAuth } from '@/lib/auth';
+import { assistantIntro, biasSuggestionsByGoals } from '@/lib/experience';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -90,10 +92,15 @@ function ComparisonCards({ signals }: { signals: Signal[] }) {
 }
 
 export default function AssistantPage() {
+  const { preferences } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS);
+  const initialSuggestions = useMemo(
+    () => biasSuggestionsByGoals(INITIAL_SUGGESTIONS, preferences.goals),
+    [preferences.goals]
+  );
+  const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -142,14 +149,13 @@ export default function AssistantPage() {
             <div>
               <p className="font-display text-lg font-bold">Hola, soy Radar</p>
               <p className="mt-1 text-sm leading-relaxed text-dim">
-                Puedo ayudarte a entender qué señales detectó el motor, explicar por qué una señal
-                existe o mostrarte oportunidades tempranas.
+                {assistantIntro(preferences.experienceLevel)}
               </p>
             </div>
             <div className="w-full text-left">
               <p className="mb-3 text-xs font-medium text-faint">Preguntas sugeridas</p>
               <div className="flex flex-wrap gap-2">
-                {INITIAL_SUGGESTIONS.map((s) => (
+                {initialSuggestions.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}

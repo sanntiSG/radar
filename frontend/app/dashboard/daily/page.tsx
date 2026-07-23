@@ -8,6 +8,7 @@ import type { DailyResponse, Signal } from '@/lib/types';
 import { Score, Skeleton, Sparkline, StatusBadge, GrowthPct } from '@/components/dashboard/ui';
 import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
 import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
+import { dailySubtitle } from '@/lib/experience';
 
 function SignalRow({ signal }: { signal: Signal }) {
   return (
@@ -40,7 +41,7 @@ function formatDate(iso: string): string {
 }
 
 export default function DailyPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, preferences, loading: authLoading } = useAuth();
   const [data, setData] = useState<DailyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,9 +65,7 @@ export default function DailyPage() {
             {data && (
               <p className="mt-1 text-sm text-dim capitalize">{formatDate(data.date)}</p>
             )}
-            <p className="mt-1 text-sm text-faint">
-              Lo más relevante del mercado detectado hoy.
-            </p>
+            <p className="mt-1 text-sm text-faint">{dailySubtitle(preferences.experienceLevel)}</p>
             <div className="mt-3">
               <AccuracyBadge />
             </div>

@@ -9,6 +9,7 @@ import {
   type SectionPref,
 } from '@/lib/auth';
 import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
+import { EXPERIENCE_LEVELS, GOALS, LANGUAGES, MARKETPLACES, MAX_GOALS } from '@/lib/experience';
 
 const SECTION_LABELS: Record<SectionPref['id'], string> = {
   stats: 'Métricas generales',
@@ -261,7 +262,7 @@ export default function ProfilePage() {
       </section>
 
       {/* Radar Personal */}
-      <section className="mt-10 pb-10" aria-label="Radar Personal">
+      <section className="mt-10" aria-label="Radar Personal">
         <h2 className="font-display text-sm font-bold text-dim">Radar Personal</h2>
         <p className="mt-1 text-xs leading-relaxed text-faint">
           Ajusta Radar a tu mercado. Los nichos y keywords priorizan señales relevantes para ti.
@@ -400,6 +401,125 @@ export default function ProfilePage() {
               </button>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Sobre ti — adapta el tono de toda la plataforma */}
+      <section className="mt-10 pb-10" aria-label="Sobre ti">
+        <h2 className="font-display text-sm font-bold text-dim">Sobre ti</h2>
+        <p className="mt-1 text-xs leading-relaxed text-faint">
+          Esto adapta el tono de Radar Diario, el dashboard y el Asistente a tu nivel y objetivos reales.
+        </p>
+
+        {/* Nivel de experiencia */}
+        <div className="mt-4">
+          <span className="text-xs text-faint">Nivel de experiencia</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {EXPERIENCE_LEVELS.map((lvl) => {
+              const active = draft.experienceLevel === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  onClick={() => save({ ...draft, experienceLevel: active ? '' : lvl.id })}
+                  className={`pressable rounded-full border px-3 py-1.5 text-xs transition-colors duration-150 ${
+                    active
+                      ? 'border-jade bg-jade/10 font-medium text-jade'
+                      : 'border-line text-dim hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {lvl.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Objetivos */}
+        <div className="mt-5">
+          <span className="text-xs text-faint">Tus objetivos en Radar</span>
+          <p className="mt-0.5 text-[11px] text-faint">Elige hasta {MAX_GOALS}.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {GOALS.map((goal) => {
+              const active = draft.goals.includes(goal.id);
+              const disabled = !active && draft.goals.length >= MAX_GOALS;
+              return (
+                <button
+                  key={goal.id}
+                  disabled={disabled}
+                  onClick={() => {
+                    const next = active
+                      ? draft.goals.filter((g) => g !== goal.id)
+                      : [...draft.goals, goal.id];
+                    save({ ...draft, goals: next });
+                  }}
+                  className={`pressable rounded-full border px-3 py-1.5 text-xs transition-colors duration-150 ${
+                    active
+                      ? 'border-jade bg-jade/10 font-medium text-jade'
+                      : disabled
+                        ? 'cursor-not-allowed border-line text-faint opacity-40'
+                        : 'border-line text-dim hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {goal.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Marketplaces */}
+        <div className="mt-5">
+          <span className="text-xs text-faint">Marketplaces que usas</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {MARKETPLACES.map((m) => {
+              const active = draft.marketplaces.includes(m.id);
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    const next = active
+                      ? draft.marketplaces.filter((x) => x !== m.id)
+                      : [...draft.marketplaces, m.id];
+                    save({ ...draft, marketplaces: next });
+                  }}
+                  className={`pressable rounded-full border px-3 py-1.5 text-xs transition-colors duration-150 ${
+                    active
+                      ? 'border-jade bg-jade/10 font-medium text-jade'
+                      : 'border-line text-dim hover:border-line-strong hover:text-ink'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Idioma y región */}
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-xs text-faint">Idioma</span>
+            <select
+              value={draft.language}
+              onChange={(e) => save({ ...draft, language: e.target.value as Preferences['language'] })}
+              className="mt-1 w-full rounded-lg border border-line bg-elev px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 focus:border-jade"
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l.id} value={l.id}>{l.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs text-faint">Región (opcional)</span>
+            <input
+              type="text"
+              value={draft.region}
+              onChange={(e) => setDraft({ ...draft, region: e.target.value })}
+              onBlur={() => save(draft)}
+              placeholder="Ej: Buenos Aires, CDMX…"
+              className="mt-1 w-full rounded-lg border border-line bg-elev px-3 py-2.5 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-faint focus:border-jade"
+            />
+          </label>
         </div>
       </section>
 
