@@ -723,3 +723,51 @@ describe('N11 — Radar Personal enriquecido', () => {
     expect(me.preferences.language).toBe('en');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N12 — Radar Diario v2
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N12 — Radar Diario v2', () => {
+  it('GET /api/daily incluye biggestMovers, hashtagsHighlights y emergingProducts', async () => {
+    const data = await get('/api/daily');
+    expect(data.sections.biggestMovers).toBeDefined();
+    expect('up' in data.sections.biggestMovers).toBe(true);
+    expect('down' in data.sections.biggestMovers).toBe(true);
+    expect(Array.isArray(data.sections.hashtagsHighlights)).toBe(true);
+    for (const h of data.sections.hashtagsHighlights) expect(h.entityType).toBe('hashtag');
+    expect(Array.isArray(data.sections.emergingProducts)).toBe(true);
+    for (const p of data.sections.emergingProducts) {
+      expect(p.entityType).toBe('product');
+      expect(['new', 'rising']).toContain(p.status);
+    }
+  });
+
+  it('GET /api/daily?niche=Gadgets filtra todas las secciones por categoría', async () => {
+    const data = await get('/api/daily?niche=Gadgets');
+    expect(data.scope.niche).toBe('Gadgets');
+    for (const s of data.sections.moving) expect(s.category).toBe('Gadgets');
+    for (const p of data.sections.emergingProducts) expect(p.category).toBe('Gadgets');
+  });
+
+  it('GET /api/daily?niche=NoExiste ignora un nicho inválido (queda null)', async () => {
+    const data = await get('/api/daily?niche=NoExiste');
+    expect(data.scope.niche).toBeNull();
+  });
+
+  it('GET /api/daily?country=AR solo afecta el rótulo de ámbito, no filtra datos', async () => {
+    const withCountry = await get('/api/daily?country=AR');
+    expect(withCountry.scope.country).toBe('AR');
+    expect(withCountry.scope.countryLabel).toBe('Argentina');
+    expect(withCountry.scope.note).toContain('Argentina');
+
+    const without = await get('/api/daily');
+    // Mismo total de secciones "moving" con y sin país — el país no filtra señales
+    expect(withCountry.sections.moving.length).toBe(without.sections.moving.length);
+  });
+
+  it('GET /api/daily?platform=reddit filtra por fuente', async () => {
+    const data = await get('/api/daily?platform=reddit');
+    expect(data.scope.platform).toBe('reddit');
+  });
+});

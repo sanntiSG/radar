@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { Signal } from '../models';
-import { User } from '../models/User';
+import { COUNTRIES, SOURCE_IDS, User } from '../models/User';
 import { authOptional } from '../middlewares/auth';
+import { CATEGORIES } from '../services/taxonomy';
 import { asyncHandler } from './helpers';
 
 export const dailyRouter = Router();
+
+const COUNTRY_CODES = new Set(COUNTRIES.map((c) => c.code));
 
 /** YYYY-MM-DD for today in UTC */
 function todayISO(): string {
@@ -53,7 +56,11 @@ async function checkInStreak(userId: string): Promise<{ streak: number; isNew: b
 /**
  * GET /api/daily — resumen personalizado del día.
  * Secciones: nuevas detecciones, en ascenso (rising), mayor movimiento (growthScore),
- * oportunidad del día (seed por fecha) y predicción del día (confianza alta, d7 > actual).
+ * oportunidad del día (seed por fecha), predicción del día (confianza alta, d7 > actual),
+ * mayores movimientos vs ayer, hashtags destacados y productos emergentes.
+ * Filtros opcionales ?niche=&platform=&country= (además de las preferencias del usuario
+ * si hay sesión). `country` solo afecta el rótulo de ámbito — es honesto: los datos no
+ * están geo-segmentados salvo el interés de Google Trends.
  * Autenticado: incrementa racha si es un día nuevo consecutivo.
  */
 dailyRouter.get(
@@ -79,33 +86,64 @@ dailyRouter.get(
       if (user?.preferences?.keywords) keywords = user.preferences.keywords;
     }
 
-    const nicheFilter = niches.length > 0 ? { category: { $in: niches } } : {};
+    // Filtros de query (?niche=&platform=&country=) — tienen prioridad sobre las prefs
+    const queryNiche =
+      typeof req.query.niche === 'string' && (CATEGORIES as readonly string[]).includes(req.query.niche)
+        ? req.query.niche
+        : null;
+    const queryPlatform =
+      typeof req.query.platform === 'string' && (SOURCE_IDS as readonly string[]).includes(req.query.platform)
+        ? req.query.platform
+        : null;
+    const queryCountry =
+      typeof req.query.country === 'string' && COUNTRY_CODES.has(req.query.country) ? req.query.country : null;
 
-    const [newSignals, risingSignals, movingSignals, allSignals, highConfSignals] = await Promise.all([
-      Signal.find({ ...nicheFilter, status: 'new' })
-        .select('name slug category entityType radarScore growthScore status metrics sparkline detectedAt')
-        .sort({ detectedAt: -1 })
-        .limit(4),
-      Signal.find({ ...nicheFilter, status: 'rising' })
-        .select('name slug category entityType radarScore growthScore status confidence metrics sparkline')
-        .sort({ radarScore: -1 })
-        .limit(4),
-      Signal.find({ ...nicheFilter, status: { $ne: 'dormant' } })
-        .select('name slug category entityType radarScore growthScore status metrics sparkline')
-        .sort({ growthScore: -1 })
-        .limit(4),
-      Signal.find({ ...nicheFilter, status: { $ne: 'dormant' } })
-        .select('name slug category entityType radarScore growthScore status confidence metrics sparkline')
-        .lean(),
-      Signal.find({
-        ...nicheFilter,
-        confidence: { $in: ['medium', 'high'] },
-        'predictions.d7': { $ne: null },
-      })
-        .select('name slug category entityType radarScore growthScore status confidence predictions metrics sparkline')
-        .sort({ confidenceScore: -1 })
-        .limit(3),
-    ]);
+    const nicheFilter = queryNiche
+      ? { category: queryNiche }
+      : niches.length > 0
+        ? { category: { $in: niches } }
+        : {};
+    const platformFilter = queryPlatform ? { sources: queryPlatform } : {};
+    const baseFilter = { ...nicheFilter, ...platformFilter };
+
+    const [newSignals, risingSignals, movingSignals, allSignals, highConfSignals, hashtagsHighlights, emergingProducts] =
+      await Promise.all([
+        Signal.find({ ...baseFilter, status: 'new' })
+          .select('name slug category entityType radarScore growthScore status metrics sparkline detectedAt')
+          .sort({ detectedAt: -1 })
+          .limit(4),
+        Signal.find({ ...baseFilter, status: 'rising' })
+          .select('name slug category entityType radarScore growthScore status confidence metrics sparkline')
+          .sort({ radarScore: -1 })
+          .limit(4),
+        Signal.find({ ...baseFilter, status: { $ne: 'dormant' } })
+          .select('name slug category entityType radarScore growthScore status metrics sparkline')
+          .sort({ growthScore: -1 })
+          .limit(4),
+        Signal.find({ ...baseFilter, status: { $ne: 'dormant' } })
+          .select('name slug category entityType radarScore growthScore status confidence metrics sparkline')
+          .lean(),
+        Signal.find({
+          ...baseFilter,
+          confidence: { $in: ['medium', 'high'] },
+          'predictions.d7': { $ne: null },
+        })
+          .select('name slug category entityType radarScore growthScore status confidence predictions metrics sparkline')
+          .sort({ confidenceScore: -1 })
+          .limit(3),
+        Signal.find({ ...platformFilter, entityType: 'hashtag', status: { $ne: 'dormant' } })
+          .select('name slug category entityType radarScore growthScore status metrics sparkline')
+          .sort({ radarScore: -1 })
+          .limit(3),
+        Signal.find({ ...baseFilter, entityType: 'product', status: { $in: ['new', 'rising'] } })
+          .select('name slug category entityType radarScore growthScore status metrics sparkline')
+          .sort({ radarScore: -1 })
+          .limit(6)
+          .lean(),
+      ]);
+
+    // Productos emergentes: status new/rising con frecuencia todavía baja (señal temprana real)
+    const emergingLowFreq = emergingProducts.filter((s: any) => (s.metrics?.frequency ?? 0) <= 25).slice(0, 4);
 
     // Opportunity of the day: seed by date
     const opportunityOfDay = pickDaylight(allSignals.filter((s) => s.status !== 'dormant'), today);
@@ -125,9 +163,30 @@ dailyRouter.get(
         }).slice(0, 3)
       : [];
 
+    // Cambios respecto a ayer: growthScore ya representa el % de cambio vs el período previo
+    // (calculado por el motor sobre snapshots reales). Elegimos el mayor ascenso y el mayor descenso.
+    const withMovement = allSignals.filter((s) => typeof s.growthScore === 'number');
+    const up = [...withMovement].filter((s) => s.growthScore > 0).sort((a, b) => b.growthScore - a.growthScore)[0] ?? null;
+    const down = [...withMovement].filter((s) => s.growthScore < 0).sort((a, b) => a.growthScore - b.growthScore)[0] ?? null;
+
+    // Rótulo de ámbito — honesto: el país solo afecta el interés de Google Trends
+    const effectiveCountryCode = queryCountry;
+    const countryLabel = effectiveCountryCode
+      ? COUNTRIES.find((c) => c.code === effectiveCountryCode)?.label ?? null
+      : null;
+
     res.json({
       date: today,
       streak,
+      scope: {
+        niche: queryNiche,
+        platform: queryPlatform,
+        country: effectiveCountryCode,
+        countryLabel,
+        note: countryLabel
+          ? `"${countryLabel}" solo afecta el interés de Google Trends — el resto de los datos es agregado global.`
+          : null,
+      },
       sections: {
         new: newSignals,
         rising: risingSignals,
@@ -135,6 +194,9 @@ dailyRouter.get(
         opportunityOfDay,
         predictionOfDay,
         keywordHighlights,
+        biggestMovers: { up, down },
+        hashtagsHighlights,
+        emergingProducts: emergingLowFreq,
       },
     });
   })

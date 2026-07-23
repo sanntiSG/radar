@@ -106,9 +106,18 @@ export interface Stats {
   avgRadarScore: number;
 }
 
+export interface DailyScope {
+  niche: string | null;
+  platform: string | null;
+  country: string | null;
+  countryLabel: string | null;
+  note: string | null;
+}
+
 export interface DailyResponse {
   date: string;
   streak: number;
+  scope: DailyScope;
   sections: {
     new: Signal[];
     rising: Signal[];
@@ -116,6 +125,9 @@ export interface DailyResponse {
     opportunityOfDay: Signal | null;
     predictionOfDay: Signal | null;
     keywordHighlights: Signal[];
+    biggestMovers: { up: Signal | null; down: Signal | null };
+    hashtagsHighlights: Signal[];
+    emergingProducts: Signal[];
   };
 }
 

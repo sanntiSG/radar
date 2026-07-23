@@ -10,6 +10,19 @@ import { AchievementStrip } from '@/components/dashboard/AchievementStrip';
 import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
 import { dailySubtitle } from '@/lib/experience';
 
+const NICHES = ['Gadgets', 'Belleza', 'Fitness', 'Mascotas', 'Cocina', 'Hogar', 'Tecnología', 'Moda', 'Automotor', 'Salud y bienestar', 'General'];
+const PLATFORMS = [
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'google-trends', label: 'Google Trends' },
+  { id: 'rss', label: 'RSS / Blogs' },
+];
+const COUNTRIES = [
+  { code: 'AR', label: 'Argentina' }, { code: 'MX', label: 'México' }, { code: 'CO', label: 'Colombia' },
+  { code: 'CL', label: 'Chile' }, { code: 'PE', label: 'Perú' }, { code: 'ES', label: 'España' },
+  { code: 'UY', label: 'Uruguay' }, { code: 'EC', label: 'Ecuador' }, { code: 'US', label: 'Estados Unidos' },
+  { code: 'BR', label: 'Brasil' },
+];
+
 function SignalRow({ signal }: { signal: Signal }) {
   return (
     <Link
@@ -40,17 +53,57 @@ function formatDate(iso: string): string {
   });
 }
 
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-lg border border-line bg-elev px-3 py-1.5 text-xs text-dim outline-none transition-colors duration-150 focus:border-jade"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
 export default function DailyPage() {
   const { user, preferences, loading: authLoading } = useAuth();
   const [data, setData] = useState<DailyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [niche, setNiche] = useState('');
+  const [platform, setPlatform] = useState('');
+  const [country, setCountry] = useState('');
+  const [primed, setPrimed] = useState(false);
+
+  // Precarga los filtros desde el perfil una sola vez, cuando termina de cargar.
+  useEffect(() => {
+    if (authLoading || primed) return;
+    if (preferences.niches.length === 1) setNiche(preferences.niches[0]);
+    if (preferences.platforms.length === 1) setPlatform(preferences.platforms[0]);
+    if (preferences.country && preferences.country !== 'global') setCountry(preferences.country);
+    setPrimed(true);
+  }, [authLoading, primed, preferences]);
 
   useEffect(() => {
+    if (!primed && !authLoading) return;
+    setError(null);
     api
-      .daily()
+      .daily({ niche: niche || undefined, platform: platform || undefined, country: country || undefined })
       .then(setData)
       .catch(() => setError('No se pudo cargar el Radar Diario.'));
-  }, []);
+  }, [niche, platform, country, primed, authLoading]);
 
   const greeting = user
     ? `Buenos días, ${(user.name || 'explorador').split(' ')[0]}`
@@ -79,6 +132,40 @@ export default function DailyPage() {
             </div>
           )}
         </div>
+
+        {/* Filtros de ámbito */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-faint">Ver:</span>
+          <FilterSelect
+            value={niche}
+            onChange={setNiche}
+            options={NICHES.map((n) => ({ value: n, label: n }))}
+            placeholder="Todos los nichos"
+          />
+          <FilterSelect
+            value={platform}
+            onChange={setPlatform}
+            options={PLATFORMS.map((p) => ({ value: p.id, label: p.label }))}
+            placeholder="Todas las plataformas"
+          />
+          <FilterSelect
+            value={country}
+            onChange={setCountry}
+            options={COUNTRIES.map((c) => ({ value: c.code, label: c.label }))}
+            placeholder="Global"
+          />
+          {(niche || platform || country) && (
+            <button
+              onClick={() => { setNiche(''); setPlatform(''); setCountry(''); }}
+              className="pressable text-xs text-faint underline transition-colors duration-150 hover:text-ink"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+        {data?.scope.note && (
+          <p className="mt-2 text-[11px] leading-relaxed text-faint">{data.scope.note}</p>
+        )}
       </header>
 
       {error && <p className="mt-6 text-sm text-dim">{error}</p>}
@@ -102,6 +189,30 @@ export default function DailyPage() {
               </p>
               <div className="mt-3 rise-in">
                 <SignalRow signal={data.sections.opportunityOfDay} />
+              </div>
+            </section>
+          )}
+
+          {/* Cambios respecto a ayer */}
+          {(data.sections.biggestMovers.up || data.sections.biggestMovers.down) && (
+            <section>
+              <SectionTitle>Respecto a ayer</SectionTitle>
+              <p className="mt-0.5 text-xs text-faint">
+                El mayor ascenso y el mayor descenso en menciones desde el período anterior.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {data.sections.biggestMovers.up && (
+                  <div className="rise-in">
+                    <p className="mb-1 text-[11px] font-medium text-jade">↑ Mayor ascenso</p>
+                    <SignalRow signal={data.sections.biggestMovers.up} />
+                  </div>
+                )}
+                {data.sections.biggestMovers.down && (
+                  <div className="rise-in">
+                    <p className="mb-1 text-[11px] font-medium text-amber">↓ Mayor descenso</p>
+                    <SignalRow signal={data.sections.biggestMovers.down} />
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -158,6 +269,37 @@ export default function DailyPage() {
               <SectionTitle>Nuevas detecciones</SectionTitle>
               <div className="mt-3 space-y-2">
                 {data.sections.new.map((s, i) => (
+                  <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Productos emergentes */}
+          {data.sections.emergingProducts.length > 0 && (
+            <section>
+              <SectionTitle>Productos emergentes</SectionTitle>
+              <p className="mt-0.5 text-xs text-faint">
+                Nuevos o en ascenso, con volumen todavía bajo — antes de que se vuelvan evidentes.
+              </p>
+              <div className="mt-3 space-y-2">
+                {data.sections.emergingProducts.map((s, i) => (
+                  <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SignalRow signal={s} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Hashtags destacados */}
+          {data.sections.hashtagsHighlights.length > 0 && (
+            <section>
+              <SectionTitle>Hashtags destacados</SectionTitle>
+              <div className="mt-3 space-y-2">
+                {data.sections.hashtagsHighlights.map((s, i) => (
                   <div key={s._id} className="rise-in" style={{ animationDelay: `${i * 50}ms` }}>
                     <SignalRow signal={s} />
                   </div>

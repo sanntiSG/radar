@@ -36,6 +36,13 @@ export const api = {
     get<{ points: HistoryPoint[] }>(`/api/history/${entityType}/${slug}`),
   sources: () => get<SourcesResponse>('/api/sources'),
   opportunities: () => get<{ items: Opportunity[]; total: number }>('/api/opportunities'),
-  daily: () => get<DailyResponse>('/api/daily'),
+  daily: (params?: { niche?: string; platform?: string; country?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.niche) qs.set('niche', params.niche);
+    if (params?.platform) qs.set('platform', params.platform);
+    if (params?.country) qs.set('country', params.country);
+    const suffix = qs.toString();
+    return get<DailyResponse>(`/api/daily${suffix ? `?${suffix}` : ''}`);
+  },
   accuracy: () => get<AccuracyResponse>('/api/accuracy'),
 };
