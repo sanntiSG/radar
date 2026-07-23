@@ -590,3 +590,71 @@ describe('N9 — Índice de Precisión', () => {
     expect(data.overall.predictionsEvaluated).toBeGreaterThan(0);
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// N10 — Radar Assistant v2
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('N10 — Radar Assistant v2', () => {
+  const ask = async (q: string) => {
+    const res = await fetch(`${base}/api/assistant/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q }),
+    });
+    expect(res.ok, `assistant query "${q}" → HTTP ${res.status}`).toBe(true);
+    return res.json() as Promise<any>;
+  };
+
+  it('"productos de gadgets acelerando" combina entityType + categoria + metrica', async () => {
+    const data = await ask('productos de gadgets acelerando');
+    expect(data.kind).toBe('metric_ranking');
+    expect(Array.isArray(data.signals)).toBe(true);
+    for (const s of data.signals) {
+      expect(s.entityType).toBe('product');
+      expect(s.category).toBe('Gadgets');
+    }
+  });
+
+  it('"qué categorías aceleran más" devuelve ranking agregado por categoría', async () => {
+    const data = await ask('qué categorías aceleran más');
+    expect(data.kind).toBe('category_ranking');
+    expect(Array.isArray(data.categories)).toBe(true);
+    expect(data.categories.length).toBeGreaterThan(0);
+    const first = data.categories[0];
+    expect(typeof first.name).toBe('string');
+    expect(typeof first.avgAcceleration).toBe('number');
+    expect(first.count).toBeGreaterThan(0);
+    // Orden descendente por aceleración promedio
+    if (data.categories.length > 1) {
+      expect(first.avgAcceleration).toBeGreaterThanOrEqual(data.categories[1].avgAcceleration);
+    }
+  });
+
+  it('"mayor probabilidad de seguir creciendo" filtra por confianza + proyección sostenida', async () => {
+    const data = await ask('¿qué tiene mayor probabilidad de seguir creciendo?');
+    expect(data.kind).toBe('continuation');
+    expect(Array.isArray(data.signals)).toBe(true);
+    for (const s of data.signals) {
+      expect(['medium', 'high']).toContain(s.confidence);
+    }
+  });
+
+  it('"compara X con Y" devuelve dos señales contrastadas', async () => {
+    const data = await ask('compara mini impresora portatil con corrector de postura');
+    expect(data.kind).toBe('comparison');
+    expect(data.signals.length).toBe(2);
+    expect(data.answer).toContain('Radar Score');
+  });
+
+  it('geo: menciona el país mientras aclara que no hay geo-segmentación', async () => {
+    const data = await ask('qué está creciendo en Argentina');
+    expect(data.answer.toLowerCase()).toContain('argentina');
+    expect(data.answer.toLowerCase()).toContain('geo-segmentad');
+  });
+
+  it('ventana temporal: "hoy" acota por recencia y aclara la granularidad diaria', async () => {
+    const data = await ask('qué está creciendo hoy');
+    expect(data.answer.toLowerCase()).toContain('recencia');
+  });
+});

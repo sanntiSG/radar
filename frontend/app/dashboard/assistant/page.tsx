@@ -16,10 +16,12 @@ interface Message {
 const INITIAL_SUGGESTIONS = [
   '¿Qué está creciendo ahora?',
   'Muéstrame oportunidades tempranas',
-  'Señales de Gadgets',
+  '¿Qué categorías aceleran más?',
+  'Productos de Gadgets acelerando',
+  '¿Qué tiene mayor probabilidad de seguir creciendo?',
+  'Compara mini impresora portátil con corrector de postura',
   '¿Cuántas señales hay?',
   '¿De dónde vienen los datos?',
-  '¿Qué tiene buenas predicciones?',
 ];
 
 async function query(q: string): Promise<AssistantResponse> {
@@ -34,7 +36,10 @@ async function query(q: string): Promise<AssistantResponse> {
 
 function SignalCard({ signal }: { signal: Signal }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-line bg-bg px-3 py-2.5 text-xs">
+    <Link
+      href={`/dashboard/signal/${signal.slug}`}
+      className="flex items-center gap-3 rounded-lg border border-line bg-bg px-3 py-2.5 text-xs transition-colors duration-150 hover:border-jade/40"
+    >
       <Score value={signal.radarScore} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-ink">{signal.name}</p>
@@ -42,6 +47,44 @@ function SignalCard({ signal }: { signal: Signal }) {
       </div>
       <Sparkline data={signal.sparkline} />
       <StatusBadge status={signal.status} />
+    </Link>
+  );
+}
+
+function CategoryRankingList({ categories }: { categories: NonNullable<AssistantResponse['categories']> }) {
+  const max = Math.max(...categories.map((c) => c.avgAcceleration), 1);
+  return (
+    <div className="space-y-2 rounded-lg border border-line bg-bg p-3">
+      {categories.map((c) => (
+        <div key={c.name} className="text-xs">
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <span className="font-medium text-ink">{c.name}</span>
+            <span className="font-mono text-[11px] text-faint">
+              accel {c.avgAcceleration} · {c.count} señales
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-soft">
+            <div
+              className="h-full rounded-full bg-jade transition-all duration-500"
+              style={{ width: `${Math.max(4, (c.avgAcceleration / max) * 100)}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ComparisonCards({ signals }: { signals: Signal[] }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1">
+        <SignalCard signal={signals[0]} />
+      </div>
+      <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-wide text-faint">vs</span>
+      <div className="flex-1">
+        <SignalCard signal={signals[1]} />
+      </div>
     </div>
   );
 }
@@ -132,12 +175,20 @@ export default function AssistantPage() {
                       <div className="rounded-2xl rounded-tl-sm border border-line bg-elev px-4 py-3 text-sm leading-relaxed text-ink">
                         {msg.text}
                       </div>
-                      {msg.response?.signals && msg.response.signals.length > 0 && (
-                        <div className="space-y-1.5">
-                          {msg.response.signals.slice(0, 5).map((s) => (
-                            <SignalCard key={s._id ?? s.slug} signal={s} />
-                          ))}
-                        </div>
+                      {msg.response?.kind === 'category_ranking' && msg.response.categories && msg.response.categories.length > 0 && (
+                        <CategoryRankingList categories={msg.response.categories} />
+                      )}
+                      {msg.response?.kind === 'comparison' && msg.response.signals?.length === 2 ? (
+                        <ComparisonCards signals={msg.response.signals} />
+                      ) : (
+                        msg.response?.signals &&
+                        msg.response.signals.length > 0 && (
+                          <div className="space-y-1.5">
+                            {msg.response.signals.slice(0, 5).map((s) => (
+                              <SignalCard key={s._id ?? s.slug} signal={s} />
+                            ))}
+                          </div>
+                        )
                       )}
                       {msg.response?.suggestions && (
                         <div className="flex flex-wrap gap-1.5">

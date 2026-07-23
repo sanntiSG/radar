@@ -119,10 +119,19 @@ export interface DailyResponse {
   };
 }
 
+export interface CategoryRankingEntry {
+  name: string;
+  avgAcceleration: number;
+  avgVelocity: number;
+  avgMomentum: number;
+  count: number;
+}
+
 export interface AssistantResponse {
   answer: string;
   kind: string;
   signals?: Signal[];
+  categories?: CategoryRankingEntry[];
   suggestions?: string[];
 }
 
