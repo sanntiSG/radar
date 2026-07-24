@@ -16,7 +16,7 @@ export default function TrendsPage() {
       renderRow={(t) => (
         <Row columns={4}>
           <div className="min-w-0">
-            <p className="truncate font-medium">{t.name}</p>
+            <p className="line-clamp-2 font-medium md:line-clamp-1 md:truncate">{t.name}</p>
             <p className="mt-0.5 text-xs text-faint">{t.category}</p>
           </div>
           <span className="text-right">

@@ -16,7 +16,7 @@ export default function HashtagsPage() {
       renderRow={(h) => (
         <Row columns={4}>
           <div className="min-w-0">
-            <p className="truncate font-medium text-jade">{h.tag}</p>
+            <p className="line-clamp-2 font-medium text-jade md:line-clamp-1 md:truncate">{h.tag}</p>
             <p className="mt-0.5 text-xs text-faint">{h.category}</p>
           </div>
           <span className="text-right">

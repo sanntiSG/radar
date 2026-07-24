@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Children, useEffect, useState } from 'react';
 import { Skeleton } from './ui';
 
 const CATEGORIES = [
@@ -122,12 +122,18 @@ export function Row({
   children: React.ReactNode;
   columns: number;
 }) {
+  const items = Children.toArray(children);
+  const [nameCol, ...metricCols] = items;
   return (
     <div
-      className="grid items-center gap-4 px-3 py-3.5 transition-colors duration-150 hover:bg-elev md:grid-flow-col"
+      className="flex flex-col gap-2 px-3 py-3.5 transition-colors duration-150 hover:bg-elev md:grid md:grid-flow-col md:items-center md:gap-4"
       style={{ gridTemplateColumns: `1fr repeat(${columns - 1}, minmax(90px, auto))` }}
     >
-      {children}
+      {/* En móvil son contenedores reales (nombre arriba, métricas abajo en flex-wrap);
+          desde md, display:contents los hace transparentes y sus hijos vuelven a ser
+          celdas directas del grid — el layout de escritorio queda igual al de antes. */}
+      <div className="md:contents">{nameCol}</div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 md:contents">{metricCols}</div>
     </div>
   );
 }

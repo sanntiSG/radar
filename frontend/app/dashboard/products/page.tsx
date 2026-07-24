@@ -26,7 +26,7 @@ export default function ProductsPage() {
       renderRow={(p) => (
         <Row columns={4}>
           <div className="min-w-0">
-            <p className="truncate font-medium">{p.name}</p>
+            <p className="line-clamp-2 font-medium md:line-clamp-1 md:truncate">{p.name}</p>
             <p className="mt-0.5 truncate text-xs text-faint">
               {p.category}
               {p.aliases.length > 0 && (

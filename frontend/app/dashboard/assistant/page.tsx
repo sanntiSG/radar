@@ -44,10 +44,12 @@ function SignalCard({ signal }: { signal: Signal }) {
     >
       <Score value={signal.radarScore} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-ink">{signal.name}</p>
+        <p className="line-clamp-2 font-medium text-ink md:line-clamp-1 md:truncate">{signal.name}</p>
         <p className="text-faint">{signal.category}</p>
       </div>
-      <Sparkline data={signal.sparkline} />
+      <span className="hidden sm:block">
+        <Sparkline data={signal.sparkline} />
+      </span>
       <StatusBadge status={signal.status} />
     </Link>
   );

@@ -31,10 +31,12 @@ function SignalRow({ signal }: { signal: Signal }) {
     >
       <Score value={signal.radarScore} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{signal.name}</p>
+        <p className="line-clamp-2 text-sm font-medium md:line-clamp-1 md:truncate">{signal.name}</p>
         <p className="text-xs text-faint">{signal.category}</p>
       </div>
-      <Sparkline data={signal.sparkline} />
+      <span className="hidden sm:block">
+        <Sparkline data={signal.sparkline} />
+      </span>
       <GrowthPct value={signal.growthScore} />
       <StatusBadge status={signal.status} />
     </Link>

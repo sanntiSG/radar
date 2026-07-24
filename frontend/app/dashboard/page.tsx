@@ -4,23 +4,18 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { authFetch, useAuth, type SectionPref } from '@/lib/auth';
+import { useIsDesktop } from '@/lib/useIsDesktop';
 import type { HistoryPoint, Insight, Signal, Stats } from '@/lib/types';
-import { ENTITY_LABELS, relativeDate } from '@/lib/format';
-import {
-  ConfidenceDots,
-  GrowthPct,
-  Score,
-  Skeleton,
-  Sparkline,
-  StatusBadge,
-} from '@/components/dashboard/ui';
-import { SignalChart } from '@/components/dashboard/SignalChart';
-import { FactorBreakdown } from '@/components/dashboard/FactorBreakdown';
+import { ENTITY_LABELS } from '@/lib/format';
+import { GrowthPct, Score, Skeleton, Sparkline, StatusBadge } from '@/components/dashboard/ui';
+import { SignalDetailPanel } from '@/components/dashboard/SignalDetailPanel';
+import { AccordionPanel } from '@/components/dashboard/AccordionPanel';
 import { AccuracyBadge } from '@/components/dashboard/AccuracyBadge';
 import { dashboardSubtitle, profileSummary } from '@/lib/experience';
 
 export default function DashboardPage() {
   const { user, preferences, loading: authLoading } = useAuth();
+  const isDesktop = useIsDesktop();
   const [signals, setSignals] = useState<Signal[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -155,6 +150,20 @@ export default function DashboardPage() {
     }
   };
 
+  /**
+   * En escritorio siempre selecciona (el aside sticky nunca debe quedar
+   * vacío). En móvil, tocar la señal ya abierta la colapsa — comportamiento
+   * de acordeón — porque ahí el detalle vive inline junto a la fila, no en
+   * un panel permanente.
+   */
+  const selectSignal = (signal: Signal) => {
+    if (!isDesktop && selected?.slug === signal.slug) {
+      setSelected(null);
+    } else {
+      setSelected(signal);
+    }
+  };
+
   if (error) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-6">
@@ -207,11 +216,13 @@ export default function DashboardPage() {
                 <li key={signal.slug} className="relative">
                   <div className="flex w-full items-center gap-4 px-4 py-3">
                     <button
-                      onClick={() => setSelected(signal)}
+                      onClick={() => selectSignal(signal)}
                       className="flex min-w-0 flex-1 items-center gap-4 text-left transition-colors duration-150 hover:opacity-80"
                     >
                       <Score value={signal.radarScore} />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{signal.name}</span>
+                      <span className="min-w-0 flex-1 font-medium line-clamp-2 text-sm md:line-clamp-1 md:truncate">
+                        {signal.name}
+                      </span>
                       <GrowthPct value={signal.growthScore} />
                       <StatusBadge status={signal.status} />
                     </button>
@@ -281,6 +292,18 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   )}
+                  {/* Detalle inline — solo en móvil; en desktop vive en el aside sticky */}
+                  <div className="lg:hidden">
+                    <AccordionPanel open={selected?.slug === signal.slug}>
+                      <div className="px-4 pb-4">
+                        <SignalDetailPanel
+                          signal={signal}
+                          history={selected?.slug === signal.slug ? history : null}
+                          className="border-line-strong"
+                        />
+                      </div>
+                    </AccordionPanel>
+                  </div>
                 </li>
               );
             })}
@@ -341,15 +364,17 @@ export default function DashboardPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => setSelected(signal)}
+                      onClick={() => selectSignal(signal)}
                       className="flex min-w-0 flex-1 items-center gap-4 text-left md:gap-6"
                     >
                       <Score value={signal.radarScore} />
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-1.5">
-                          <span className="block truncate font-medium">{signal.name}</span>
+                        <span className="flex items-start gap-1.5">
+                          <span className="line-clamp-2 font-medium md:line-clamp-1 md:truncate">
+                            {signal.name}
+                          </span>
                           {isKeyword && (
-                            <span className="shrink-0 rounded bg-jade/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-jade">
+                            <span className="mt-0.5 shrink-0 rounded bg-jade/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-jade">
                               keyword
                             </span>
                           )}
@@ -368,6 +393,18 @@ export default function DashboardPage() {
                         <StatusBadge status={signal.status} />
                       </span>
                     </button>
+                  </div>
+                  {/* Detalle inline — solo en móvil; en desktop vive en el aside sticky */}
+                  <div className="lg:hidden">
+                    <AccordionPanel open={selected?.slug === signal.slug}>
+                      <div className="px-3 pb-4">
+                        <SignalDetailPanel
+                          signal={signal}
+                          history={selected?.slug === signal.slug ? history : null}
+                          className="mt-1"
+                        />
+                      </div>
+                    </AccordionPanel>
                   </div>
                 </li>
               );
@@ -453,77 +490,11 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Panel de detalle — siempre presente, es el corazón del dashboard */}
-        <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Detalle de señal">
+        {/* Panel de detalle — solo desktop; en móvil el detalle vive en línea
+            junto a cada señal (acordeón), ver sectionRender.feed/watchlist */}
+        <aside className="hidden lg:block lg:sticky lg:top-6 lg:self-start" aria-label="Detalle de señal">
           {selected ? (
-            <div className="rounded-2xl border border-line bg-elev/60 p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-xl font-bold leading-tight">{selected.name}</h2>
-                  <p className="mt-1 text-xs text-faint">
-                    {selected.category} · detectada {relativeDate(selected.detectedAt)}
-                  </p>
-                </div>
-                <Score value={selected.radarScore} size="lg" />
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <StatusBadge status={selected.status} />
-                <ConfidenceDots level={selected.confidence} />
-              </div>
-
-              <div className="mt-5">
-                {history === null ? (
-                  <Skeleton className="h-44" />
-                ) : (
-                  <SignalChart
-                    points={history}
-                    metric={selected.entityType === 'trend' ? 'interest' : 'mentions'}
-                  />
-                )}
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2">
-                {[
-                  ['24 h', selected.predictions.h24],
-                  ['72 h', selected.predictions.h72],
-                  ['7 días', selected.predictions.d7],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-lg bg-soft px-3 py-2.5 text-center">
-                    <p className="font-mono text-lg font-medium tabular-nums">{value ?? '—'}</p>
-                    <p className="text-xs text-faint">{label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <p className="mt-5 text-sm leading-relaxed text-dim">{selected.explanation}</p>
-
-              {/* Por qué esta señal — desglose de factores */}
-              {selected.factors && selected.factors.length > 0 && (
-                <div className="mt-5 border-t border-line pt-4">
-                  <FactorBreakdown factors={selected.factors} />
-                  <Link
-                    href={`/dashboard/signal/${selected.slug}`}
-                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-jade transition-colors duration-150 hover:text-ink"
-                  >
-                    Ver evidencia completa →
-                  </Link>
-                </div>
-              )}
-
-              {selected.aliases.length > 0 && (
-                <div className="mt-5 border-t border-line pt-4">
-                  <p className="text-xs font-medium text-faint">Variantes agrupadas en esta señal</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {selected.aliases.slice(0, 6).map((alias) => (
-                      <span key={alias} className="rounded-md bg-soft px-2 py-1 text-xs text-dim">
-                        {alias}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <SignalDetailPanel signal={selected} history={history} />
           ) : (
             <Skeleton className="h-96" />
           )}
